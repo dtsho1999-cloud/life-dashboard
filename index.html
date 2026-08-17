@@ -1,0 +1,2591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Life Dashboard</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#12141f" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f3f4fa;
+  --card: #ffffff;
+  --sidebar: #12141f;
+  --sidebar-hover: #1c1f2e;
+  --accent: #6c5ce7;
+  --accent-soft: #ede9fe;
+  --text: #1e2130;
+  --text-dim: #6b7280;
+  --border: #e9eaf2;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --blue: #3b82f6;
+  --red: #ef4444;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 1px 3px rgba(20, 20, 43, 0.06), 0 8px 24px rgba(20, 20, 43, 0.04);
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: var(--sidebar);
+  color: #e5e7eb;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 20px;
+  border-bottom: 1px solid #23263a;
+  margin-bottom: 14px;
+}
+.avatar {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: white; font-size: 16px; flex-shrink: 0;
+}
+.profile-name { font-weight: 600; font-size: 14px; color: white; }
+.profile-tag { font-size: 11px; color: #8b8fa3; }
+
+.nav { list-style: none; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+  color: #b3b6c6; cursor: pointer; font-size: 13.5px; font-weight: 500;
+  transition: background .15s, color .15s;
+  user-select: none;
+}
+.nav-item:hover { background: var(--sidebar-hover); color: white; }
+.nav-item.active { background: var(--accent); color: white; }
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+.sidebar-footer { margin-top: auto; padding-top: 14px; }
+.quote-box {
+  background: var(--sidebar-hover); border-radius: var(--radius-sm);
+  padding: 14px; font-size: 12px; color: #9497aa; line-height: 1.5; margin-bottom: 10px;
+}
+.quote-box .quote-author { margin-top: 8px; color: #6c5ce7; font-weight: 600; }
+.streak-box {
+  background: linear-gradient(135deg, #1a1c2e, #23233d);
+  border-radius: var(--radius-sm); padding: 14px;
+}
+.streak-title { font-size: 12px; color: #b3b6c6; margin-bottom: 8px; font-weight: 600; }
+.streak-row { display: flex; gap: 16px; }
+.streak-item .streak-num { font-size: 20px; font-weight: 700; color: white; }
+.streak-item .streak-label { font-size: 10px; color: #8b8fa3; }
+
+/* Main content */
+.main { flex: 1; padding: 22px 26px 40px; max-width: 100%; overflow-x: hidden; }
+.topbar {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+}
+.topbar h1 { font-size: 22px; font-weight: 700; }
+.topbar .sub { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
+.topbar-right { display: flex; align-items: center; gap: 22px; }
+.weather { display: flex; align-items: center; gap: 8px; }
+.weather .temp { font-size: 18px; font-weight: 700; }
+.weather .loc { font-size: 11px; color: var(--text-dim); }
+.datetime { text-align: right; }
+.datetime .day { font-weight: 600; }
+.datetime .date { font-size: 12px; color: var(--text-dim); }
+.datetime .time { font-weight: 700; font-size: 16px; }
+
+.card {
+  background: var(--card); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 18px 20px; border: 1px solid var(--border);
+}
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.card-head h3 { font-size: 14.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.card-head .meta { font-size: 11.5px; color: var(--text-dim); }
+.link { color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; }
+.badge { font-size: 11px; background: var(--accent-soft); color: var(--accent); padding: 3px 9px; border-radius: 20px; font-weight: 600; }
+
+.grid { display: grid; gap: 16px; }
+.stat-row { grid-template-columns: repeat(6, 1fr); margin-bottom: 16px; }
+.two-col { grid-template-columns: 2fr 1fr; }
+.split-2 { grid-template-columns: 1fr 1fr; }
+.split-4 { grid-template-columns: repeat(4, 1fr); }
+.split-3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 1400px) { .stat-row { grid-template-columns: repeat(3, 1fr); } .two-col { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .stat-row { grid-template-columns: repeat(2, 1fr); } .split-4, .split-3, .split-2 { grid-template-columns: 1fr; } }
+
+.stat-card { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; }
+.stat-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 4px; }
+.stat-label { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+.stat-value { font-size: 20px; font-weight: 700; }
+.stat-value small { font-size: 12px; font-weight: 500; color: var(--text-dim); }
+.stat-sub { font-size: 11px; color: var(--text-dim); }
+
+.content-row { margin-bottom: 16px; }
+
+/* Journal preview */
+.journal-q { font-size: 12px; font-weight: 600; color: var(--text-dim); margin-bottom: 4px; }
+.journal-a { font-size: 13px; line-height: 1.6; color: var(--text); margin-bottom: 14px; }
+.mini-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.mini-title { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+.mini-title.green { color: var(--green); }
+.mini-title.blue { color: var(--blue); }
+.mini-title.red { color: var(--red); }
+.mini-list { list-style: none; font-size: 12.5px; line-height: 1.9; color: var(--text); }
+.mini-list li::before { content: '• '; color: var(--text-dim); }
+.mini-list.ol { counter-reset: item; }
+.mini-list.ol li { counter-increment: item; }
+.mini-list.ol li::before { content: counter(item) '. '; color: var(--text-dim); }
+
+.photo-box img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; }
+.photo-placeholder { width: 100%; height: 200px; border-radius: 12px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 13px; cursor: pointer; flex-direction: column; gap: 8px; }
+.photo-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: var(--text-dim); }
+
+/* Calendar */
+.cal-nav { display: flex; align-items: center; gap: 8px; }
+.cal-nav button { border: none; background: var(--accent-soft); color: var(--accent); width: 24px; height: 24px; border-radius: 8px; cursor: pointer; font-size: 12px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.cal-grid .dow { font-size: 10.5px; color: var(--text-dim); font-weight: 600; padding-bottom: 6px; }
+.cal-day { font-size: 12px; padding: 7px 0; border-radius: 8px; cursor: pointer; color: var(--text); position: relative; }
+.cal-day.other { color: #c7c9d9; }
+.cal-day.today { background: var(--accent); color: white; font-weight: 700; }
+.cal-day.selected:not(.today) { background: var(--accent-soft); font-weight: 700; }
+.cal-day .dot { position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: var(--amber); }
+.cal-day.today .dot { background: white; }
+
+/* progress bars */
+.progress-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.progress-icon { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+.progress-body { flex: 1; }
+.progress-title-row { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 5px; }
+.progress-title-row .pct { font-weight: 700; }
+.bar-track { height: 7px; background: #eef0f7; border-radius: 6px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 6px; }
+
+/* habit checklist */
+.habit-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); }
+.habit-row:last-child { border-bottom: none; }
+.habit-check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid #d6d8e6; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 12px; color: white; }
+.habit-check.checked { background: var(--green); border-color: var(--green); }
+.habit-label.checked-text { color: var(--text-dim); text-decoration: line-through; }
+.habit-goal { margin-left: auto; font-size: 11px; color: var(--text-dim); }
+
+/* insight box */
+.insight-box { background: linear-gradient(135deg, var(--accent), #8b7cf0); border-radius: 14px; padding: 16px; color: white; }
+.insight-icon { width: 32px; height: 32px; border-radius: 10px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+.insight-text { font-size: 12.5px; line-height: 1.6; margin-bottom: 12px; }
+.insight-btn { background: rgba(255,255,255,0.18); border: none; color: white; padding: 9px 14px; border-radius: 9px; font-size: 12.5px; font-weight: 600; cursor: pointer; width: 100%; }
+.insight-btn:hover { background: rgba(255,255,255,0.28); }
+
+/* memories strip */
+.memories-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+.memory-card img, .memory-card .ph { width: 100%; height: 90px; object-fit: cover; border-radius: 10px; }
+.memory-card .ph { display: flex; align-items: center; justify-content: center; background: var(--accent-soft); font-size: 22px; }
+.memory-date { font-size: 10px; color: var(--text-dim); margin-top: 6px; }
+.memory-title { font-size: 11.5px; font-weight: 600; }
+
+/* Generic form elements */
+input, textarea, select {
+  font-family: inherit; font-size: 13px; padding: 9px 12px;
+  border: 1px solid var(--border); border-radius: 9px; background: #fafbfe; color: var(--text); width: 100%;
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); background: white; }
+label { font-size: 12px; font-weight: 600; color: var(--text-dim); display: block; margin-bottom: 5px; }
+.field { margin-bottom: 14px; }
+.btn {
+  background: var(--accent); color: white; border: none; padding: 10px 18px;
+  border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.btn:hover { background: #5a4bd6; }
+.btn.secondary { background: var(--accent-soft); color: var(--accent); }
+.btn.danger { background: #fee2e2; color: var(--red); }
+.btn.ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.row { display: flex; gap: 12px; }
+.row > * { flex: 1; }
+
+.mood-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+.mood-opt { flex: 1; min-width: 70px; text-align: center; padding: 10px 6px; border-radius: 10px; border: 2px solid var(--border); cursor: pointer; font-size: 12px; }
+.mood-opt .emo { font-size: 22px; display: block; margin-bottom: 4px; }
+.mood-opt.selected { border-color: var(--accent); background: var(--accent-soft); }
+
+.scale-picker { display: flex; gap: 6px; }
+.scale-opt { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; }
+.scale-opt.selected { background: var(--accent); color: white; border-color: var(--accent); }
+
+.list-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.list-item:last-child { border-bottom: none; }
+.pill { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+
+.tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+.tab { padding: 9px 14px; font-size: 13px; font-weight: 600; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; }
+.tab.active { color: var(--accent); border-color: var(--accent); }
+
+.entry-card { margin-bottom: 14px; }
+.entry-date { font-size: 12px; color: var(--text-dim); font-weight: 600; margin-bottom: 8px; }
+
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.photo-grid .cell { border-radius: 12px; overflow: hidden; position: relative; aspect-ratio: 1; background: var(--accent-soft); }
+.photo-grid .cell img { width: 100%; height: 100%; object-fit: cover; }
+.photo-grid .cell .cap { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.65)); color: white; font-size: 10.5px; padding: 14px 8px 6px; }
+.photo-grid .empty-cell { display: flex; align-items: center; justify-content: center; color: var(--text-dim); font-size: 11px; border: 1px dashed var(--border); cursor: pointer; }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 20px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 600; margin: 3px 4px 3px 0; cursor: pointer; }
+
+.search-box { position: relative; margin-bottom: 20px; }
+.search-box input { padding: 12px 16px 12px 40px; font-size: 14px; }
+.search-box .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim); }
+
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 13px; }
+
+.book-cover { width: 60px; height: 84px; border-radius: 6px; background: linear-gradient(135deg, var(--accent), #a78bfa); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; flex-shrink: 0; }
+
+.chat-msg { padding: 12px 14px; border-radius: 12px; margin-bottom: 10px; font-size: 13px; line-height: 1.6; max-width: 80%; }
+.chat-msg.user { background: var(--accent); color: white; margin-left: auto; border-bottom-right-radius: 4px; }
+.chat-msg.bot { background: #f1f2f9; border-bottom-left-radius: 4px; }
+.chat-suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+
+.icon-btn { width: 28px; height: 28px; border-radius: 8px; border: none; background: var(--accent-soft); color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.icon-btn.danger { background: #fee2e2; color: var(--red); }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #d6d8e6; border-radius: 4px; }
+
+/* Mobile */
+html, body { max-width: 100%; overflow-x: hidden; -webkit-text-size-adjust: 100%; }
+.menu-toggle { display: none; }
+.sidebar-backdrop { display: none; }
+
+@media (max-width: 860px) {
+  .app { display: block; }
+  .menu-toggle {
+    display: flex; align-items: center; justify-content: center;
+    position: fixed; top: 12px; left: 12px; z-index: 110;
+    width: 42px; height: 42px; border-radius: 11px; background: var(--sidebar);
+    color: white; font-size: 19px; border: none; cursor: pointer; box-shadow: var(--shadow);
+  }
+  .sidebar {
+    position: fixed; top: 0; left: 0; z-index: 100;
+    width: 78vw; max-width: 300px;
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+  }
+  .sidebar.open { transform: translateX(0); box-shadow: 12px 0 32px rgba(0,0,0,0.35); }
+  .sidebar-backdrop.show {
+    display: block; position: fixed; inset: 0; z-index: 90;
+    background: rgba(10,10,20,0.5);
+  }
+  .main { width: 100%; padding: 66px 14px 30px; }
+  .topbar { margin-top: 4px; }
+  .topbar-right { width: 100%; justify-content: space-between; }
+  .grid.two-col, .grid.split-2, .grid.split-3, .grid.split-4 { grid-template-columns: 1fr; }
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
+  .memories-strip { grid-template-columns: repeat(3, 1fr); }
+  input, textarea, select { font-size: 16px; }
+}
+
+/* Lock screen */
+.lock-screen {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #12141f, #1c1f2e);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.lock-card {
+  background: var(--card); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 32px 28px;
+  width: 100%; max-width: 340px; text-align: center;
+}
+.lock-card .avatar {
+  width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 16px;
+  background: linear-gradient(135deg, var(--accent), #a78bfa);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: white; font-size: 20px;
+}
+.lock-card h2 { font-size: 18px; margin-bottom: 6px; }
+.lock-card .sub { color: var(--text-dim); font-size: 12.5px; margin-bottom: 22px; }
+.lock-card input {
+  width: 100%; padding: 11px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); margin-bottom: 12px; font-size: 14px;
+  outline: none;
+}
+.lock-card input:focus { border-color: var(--accent); }
+.lock-card .btn-primary {
+  width: 100%; padding: 11px; border-radius: var(--radius-sm); border: none;
+  background: var(--accent); color: white; font-weight: 600; font-size: 14px;
+  cursor: pointer; margin-top: 4px;
+}
+.lock-card .btn-primary:hover { background: #5b4bd6; }
+.lock-error {
+  color: var(--red); font-size: 12px; margin-top: -4px; margin-bottom: 10px;
+  min-height: 14px;
+}
+.lock-hint { font-size: 11px; color: var(--text-dim); margin-top: 14px; }
+.lock-hint a { color: var(--accent); cursor: pointer; font-weight: 600; }
+
+</style>
+</head>
+<body>
+
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-card" id="lockCard"></div>
+</div>
+
+<div class="app">
+  <button class="menu-toggle" id="menuToggle">☰</button>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="profile">
+      <div class="avatar" id="avatarInitials">DT</div>
+      <div>
+        <div class="profile-name" id="profileName">Dawa Tshering</div>
+        <div class="profile-tag" id="profileTag">Focus • Grow • Become</div>
+      </div>
+    </div>
+    <ul class="nav" id="navList">
+      <li class="nav-item" data-view="dashboard"><span class="icon">🏠</span>Dashboard</li>
+      <li class="nav-item" data-view="tasks"><span class="icon">✔️</span>Tasks</li>
+      <li class="nav-item" data-view="journal"><span class="icon">📝</span>Journal</li>
+      <li class="nav-item" data-view="timeline"><span class="icon">🕐</span>Timeline</li>
+      <li class="nav-item" data-view="goals"><span class="icon">🎯</span>Goals</li>
+      <li class="nav-item" data-view="habits"><span class="icon">✅</span>Habits</li>
+      <li class="nav-item" data-view="health"><span class="icon">❤️</span>Health</li>
+      <li class="nav-item" data-view="finance"><span class="icon">💳</span>Finance</li>
+      <li class="nav-item" data-view="photos"><span class="icon">🖼️</span>Photos</li>
+      <li class="nav-item" data-view="books"><span class="icon">📚</span>Books</li>
+      <li class="nav-item" data-view="travel"><span class="icon">✈️</span>Travel</li>
+      <li class="nav-item" data-view="aicoach"><span class="icon">🤖</span>AI Coach</li>
+      <li class="nav-item" data-view="documents"><span class="icon">📄</span>Documents</li>
+      <li class="nav-item" data-view="search"><span class="icon">🔍</span>Search</li>
+    </ul>
+    <div class="sidebar-footer">
+      <div class="quote-box">
+        "The only way to do great work is to love what you do."
+        <div class="quote-author">— Steve Jobs</div>
+      </div>
+      <div class="streak-box">
+        <div class="streak-title">🔥 Streak</div>
+        <div class="streak-row">
+          <div class="streak-item"><div class="streak-num" id="journalStreakNum">0</div><div class="streak-label">Journal Streak</div></div>
+          <div class="streak-item"><div class="streak-num" id="exerciseStreakNum">0</div><div class="streak-label">Exercise Streak</div></div>
+        </div>
+      </div>
+      <div class="nav-item" style="margin-top:10px;justify-content:center" onclick="logout()"><span class="icon">🔒</span>Lock Dashboard</div>
+    </div>
+  </aside>
+
+  <main class="main" id="mainContent"></main>
+</div>
+<script>
+// ---- js/auth.js ----
+const AUTH_KEY = 'lifeDashboardAuthV1';
+
+const Auth = {
+  get() {
+    try { return JSON.parse(localStorage.getItem(AUTH_KEY)); } catch (e) { return null; }
+  },
+  save(name, password) {
+    localStorage.setItem(AUTH_KEY, JSON.stringify({ name, password }));
+  },
+  clear() {
+    localStorage.removeItem(AUTH_KEY);
+  }
+};
+
+function showLockScreen() {
+  const account = Auth.get();
+  document.getElementById('lockScreen').style.display = 'flex';
+  if (account) renderLoginForm(account);
+  else renderSetupForm();
+}
+
+function hideLockScreen() {
+  document.getElementById('lockScreen').style.display = 'none';
+}
+
+function renderSetupForm() {
+  const card = document.getElementById('lockCard');
+  card.innerHTML = `
+    <div class="avatar">+</div>
+    <h2>Set Up Your Dashboard</h2>
+    <div class="sub">Choose a name and a password to lock this dashboard on this device.</div>
+    <input id="setupName" placeholder="Your name" autocomplete="off" />
+    <input id="setupPassword" type="password" placeholder="Choose a password" autocomplete="off" />
+    <input id="setupPassword2" type="password" placeholder="Confirm password" autocomplete="off" />
+    <div class="lock-error" id="setupError"></div>
+    <button class="btn-primary" onclick="handleSetup()">Create & Continue</button>
+  `;
+  document.getElementById('setupName').focus();
+  [ 'setupName', 'setupPassword', 'setupPassword2' ].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') handleSetup(); });
+  });
+}
+
+function handleSetup() {
+  const name = document.getElementById('setupName').value.trim();
+  const pw = document.getElementById('setupPassword').value;
+  const pw2 = document.getElementById('setupPassword2').value;
+  const errEl = document.getElementById('setupError');
+  if (!name) { errEl.textContent = 'Please enter your name.'; return; }
+  if (!pw || pw.length < 4) { errEl.textContent = 'Password must be at least 4 characters.'; return; }
+  if (pw !== pw2) { errEl.textContent = 'Passwords do not match.'; return; }
+  Auth.save(name, pw);
+  unlockApp(name);
+}
+
+function renderLoginForm(account) {
+  const card = document.getElementById('lockCard');
+  card.innerHTML = `
+    <div class="avatar">${escapeHtml(account.name.split(' ').map(p => p[0]).join('').slice(0,2).toUpperCase())}</div>
+    <h2>Welcome back, ${escapeHtml(account.name)}</h2>
+    <div class="sub">Enter your password to continue.</div>
+    <input id="loginPassword" type="password" placeholder="Password" autocomplete="off" />
+    <div class="lock-error" id="loginError"></div>
+    <button class="btn-primary" onclick="handleLogin()">Unlock</button>
+    <div class="lock-hint">Not you? <a onclick="handleResetAccount()">Reset dashboard</a></div>
+  `;
+  const pwEl = document.getElementById('loginPassword');
+  pwEl.focus();
+  pwEl.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+}
+
+function handleLogin() {
+  const account = Auth.get();
+  const pw = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  if (pw !== account.password) { errEl.textContent = 'Incorrect password.'; return; }
+  unlockApp(account.name);
+}
+
+function handleResetAccount() {
+  if (!confirm('This clears the saved name/password (not your journal or other data) so you can set up a new login. Continue?')) return;
+  Auth.clear();
+  renderSetupForm();
+}
+
+function unlockApp(name) {
+  hideLockScreen();
+  Store.load();
+  if (name) Store.db.profile.name = name;
+  initProfile();
+  updateSidebarStreaks();
+  navigate('dashboard');
+}
+
+function logout() {
+  hideLockScreen();
+  showLockScreen();
+}
+
+// ---- js/store.js ----
+const STORAGE_KEY = 'lifeDashboardV1';
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function dateKey(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+function todayKey() { return dateKey(new Date()); }
+function addDays(d, n) { const c = new Date(d); c.setDate(c.getDate() + n); return c; }
+function fmtLong(dstr) {
+  const d = new Date(dstr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+function fmtShort(dstr) {
+  const d = new Date(dstr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+}
+function weekdayName(dstr) {
+  const d = new Date(dstr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'long' });
+}
+
+function emptyDay() {
+  return {
+    mood: null, moodLabel: '', energy: null, sleepHrs: null, exerciseDone: false,
+    water: 0, stress: null,
+    journal: { feel: '', gratitude: ['', '', ''], wins: ['', ''], challenge: '', reflection: '' },
+    photo: { dataUrl: '', caption: '', location: '' },
+    habits: {}
+  };
+}
+
+function seedData() {
+  const habitList = ['Morning Prayer / Meditation', 'Read 20 Pages', 'Workout / Exercise', 'Drink 3L Water', 'No Junk Food', 'Sleep before 11 PM'];
+  const days = {};
+  const today = new Date();
+  const moodVals = [6, 7, 8, 7, 6, 7, 8];
+  const sleepVals = [6, 7, 6.5, 7.5, 6, 7, 6.5];
+  for (let i = 13; i >= 0; i--) {
+    const d = addDays(today, -i);
+    const k = dateKey(d);
+    const day = emptyDay();
+    const mv = moodVals[i % 7];
+    day.mood = mv;
+    day.moodLabel = mv >= 8 ? 'Happy' : mv >= 6 ? 'Calm' : 'Anxious';
+    day.energy = 5 + (i % 5);
+    day.sleepHrs = sleepVals[i % 7];
+    day.exerciseDone = i % 3 !== 0;
+    day.water = [1.5, 2, 2.5, 3, 2.5, 2, 1.8][i % 7];
+    day.stress = 3 + (i % 5);
+    habitList.forEach((h, idx) => { day.habits[h] = (i + idx) % 3 !== 0; });
+    if (i === 0) {
+      day.mood = 8; day.moodLabel = 'Happy'; day.energy = 7; day.sleepHrs = 6.5;
+      day.exerciseDone = true; day.water = 2.5; day.stress = 4;
+      day.journal.feel = 'I feel grateful and motivated. Had a productive morning at office and completed important tasks. Looking forward to a good run this evening.';
+      day.journal.gratitude = ['Good health and strength', 'Supportive family', 'Meaningful work'];
+      day.journal.wins = ['Finished budget report', 'Helped a colleague', 'Went for a 8 km run'];
+      day.journal.challenge = 'Procrastinated in the afternoon. Need to manage my time better.';
+      day.photo.location = 'Daksa Chiwog, Mongar';
+      habitList.forEach((h, idx) => { day.habits[h] = idx < 4; });
+    }
+    days[k] = day;
+  }
+  return {
+    profile: { name: 'Dawa Tshering', tagline: 'Focus • Grow • Become', avatar: '' },
+    weather: { temp: 22, condition: 'Partly Cloudy', location: 'Mongar, Bhutan' },
+    days,
+    habitList,
+    goals: [
+      { id: 'g1', title: 'Lose 20 kg', category: 'Health', progress: 60, icon: '❤️' },
+      { id: 'g2', title: 'Run Half Marathon', category: 'Health', progress: 40, icon: '🏃' },
+      { id: 'g3', title: 'Learn Python', category: 'Learning', progress: 70, icon: '💻' },
+      { id: 'g4', title: 'Save Nu. 500,000', category: 'Finance', progress: 55, icon: '💰' }
+    ],
+    finance: {
+      transactions: [
+        { id: 't1', date: todayKey(), type: 'expense', category: 'Food', amount: 6480, note: 'Groceries & dining' },
+        { id: 't2', date: todayKey(), type: 'expense', category: 'Transport', amount: 3700, note: 'Fuel' },
+        { id: 't3', date: todayKey(), type: 'expense', category: 'Shopping', amount: 2780, note: 'Clothes' },
+        { id: 't4', date: todayKey(), type: 'expense', category: 'Utilities', amount: 1850, note: 'Electricity & water' },
+        { id: 't5', date: todayKey(), type: 'expense', category: 'Others', amount: 3730, note: 'Misc' }
+      ]
+    },
+    books: [
+      { id: 'b1', title: 'Atomic Habits', author: 'James Clear', totalPages: 250, pagesRead: 163, status: 'reading', notes: '', quotes: ['You do not rise to the level of your goals, you fall to the level of your systems.'] }
+    ],
+    movies: [],
+    travel: [
+      { id: 'tr1', place: 'Daksa Chiwog, Mongar', date: todayKey(), notes: 'Morning hike with a beautiful view.', expense: 0 }
+    ],
+    documents: [],
+    tasks: [
+      { id: 'tk1', title: 'Plan the week ahead', notes: '', dueDate: todayKey(), priority: 'medium', category: 'Personal', done: false, createdAt: todayKey() },
+      { id: 'tk2', title: 'Reply to pending emails', notes: '', dueDate: todayKey(), priority: 'high', category: 'Work', done: false, createdAt: todayKey() },
+      { id: 'tk3', title: 'Book dentist appointment', notes: '', dueDate: dateKey(addDays(new Date(), 3)), priority: 'low', category: 'Health', done: false, createdAt: todayKey() }
+    ],
+    bucketList: [
+      { id: 'bl1', text: 'Run Half Marathon', done: false },
+      { id: 'bl2', text: 'Visit Japan', done: false },
+      { id: 'bl3', text: 'Learn Python', done: false },
+      { id: 'bl4', text: 'Start a Business', done: false }
+    ],
+    lifeWheel: { Career: 7, Family: 8, Health: 6, Friends: 7, Finance: 5, Learning: 7, Spirituality: 6, Fun: 6 }
+  };
+}
+
+const Store = {
+  db: null,
+  load() {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try { this.db = JSON.parse(raw); } catch (e) { this.db = seedData(); }
+    } else {
+      this.db = seedData();
+    }
+    if (!this.db.days[todayKey()]) this.db.days[todayKey()] = emptyDay();
+    if (!this.db.tasks) this.db.tasks = [];
+    this.save();
+    return this.db;
+  },
+  save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.db));
+  },
+  today() {
+    return this.db.days[todayKey()];
+  },
+  day(key) {
+    if (!this.db.days[key]) this.db.days[key] = emptyDay();
+    return this.db.days[key];
+  },
+  sortedDayKeys() {
+    return Object.keys(this.db.days).sort();
+  },
+  streak(predicate) {
+    let count = 0;
+    let d = new Date();
+    while (true) {
+      const k = dateKey(d);
+      const day = this.db.days[k];
+      if (day && predicate(day)) { count++; d = addDays(d, -1); } else break;
+    }
+    return count;
+  },
+  journalStreak() { return this.streak(d => d.journal && d.journal.feel && d.journal.feel.trim().length > 0); },
+  exerciseStreak() { return this.streak(d => d.exerciseDone); },
+  habitStreak(name) { return this.streak(d => d.habits && d.habits[name]); },
+  uid(prefix) { return prefix + '_' + Math.random().toString(36).slice(2, 9); },
+
+  addTask(title, opts = {}) {
+    const task = {
+      id: this.uid('tk'), title: title.trim(), notes: opts.notes || '',
+      dueDate: opts.dueDate || todayKey(), priority: opts.priority || 'medium',
+      category: opts.category || '', done: false, createdAt: todayKey()
+    };
+    this.db.tasks.push(task);
+    this.save();
+    return task;
+  },
+  toggleTask(id) {
+    const t = this.db.tasks.find(t => t.id === id);
+    if (t) { t.done = !t.done; this.save(); }
+  },
+  removeTask(id) {
+    this.db.tasks = this.db.tasks.filter(t => t.id !== id);
+    this.save();
+  },
+  updateTask(id, fields) {
+    const t = this.db.tasks.find(t => t.id === id);
+    if (t) { Object.assign(t, fields); this.save(); }
+  },
+  pendingTasksToday() {
+    const tk = todayKey();
+    return this.db.tasks.filter(t => !t.done && t.dueDate && t.dueDate <= tk);
+  }
+};
+
+
+// ---- js/charts.js ----
+function setupCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, w: rect.width, h: rect.height };
+}
+
+function drawLineChart(canvas, labels, values, opts = {}) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const pad = { l: 24, r: 12, t: 16, b: 24 };
+  const min = opts.min ?? Math.min(...values);
+  const max = opts.max ?? Math.max(...values);
+  const range = (max - min) || 1;
+  const plotW = w - pad.l - pad.r;
+  const plotH = h - pad.t - pad.b;
+  const color = opts.color || '#22c55e';
+
+  ctx.strokeStyle = 'rgba(148,163,184,0.25)';
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.lineWidth = 1;
+  const gridLines = opts.gridLines || 3;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = pad.t + (plotH / gridLines) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+    const val = max - (range / gridLines) * i;
+    ctx.fillText(opts.fmtY ? opts.fmtY(val) : Math.round(val), 0, y + 3);
+  }
+
+  const pts = values.map((v, i) => ({
+    x: pad.l + (plotW / (values.length - 1 || 1)) * i,
+    y: pad.t + plotH - ((v - min) / range) * plotH
+  }));
+
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + plotH);
+  grad.addColorStop(0, color + '55');
+  grad.addColorStop(1, color + '05');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pad.t + plotH);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length - 1].x, pad.t + plotH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.stroke();
+
+  ctx.fillStyle = color;
+  pts.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.fillStyle = '#64748b';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  labels.forEach((l, i) => ctx.fillText(l, pts[i].x, h - 6));
+  ctx.textAlign = 'left';
+}
+
+function drawBarChart(canvas, labels, values, opts = {}) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const pad = { l: 24, r: 12, t: 16, b: 24 };
+  const max = opts.max ?? Math.max(...values, 1);
+  const plotW = w - pad.l - pad.r;
+  const plotH = h - pad.t - pad.b;
+  const color = opts.color || '#8b5cf6';
+  const barW = (plotW / values.length) * 0.5;
+
+  ctx.strokeStyle = 'rgba(148,163,184,0.25)';
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '10px Inter, sans-serif';
+  for (let i = 0; i <= 3; i++) {
+    const y = pad.t + (plotH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+    const val = max - (max / 3) * i;
+    ctx.fillText(opts.fmtY ? opts.fmtY(val) : Math.round(val), 0, y + 3);
+  }
+
+  values.forEach((v, i) => {
+    const slot = plotW / values.length;
+    const x = pad.l + slot * i + (slot - barW) / 2;
+    const barH = (v / max) * plotH;
+    const y = pad.t + plotH - barH;
+    const r = 4;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, y + r);
+    ctx.arcTo(x, y, x + r, y, r);
+    ctx.arcTo(x + barW, y, x + barW, y + r, r);
+    ctx.lineTo(x + barW, pad.t + plotH);
+    ctx.lineTo(x, pad.t + plotH);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  ctx.fillStyle = '#64748b';
+  ctx.textAlign = 'center';
+  labels.forEach((l, i) => {
+    const slot = plotW / values.length;
+    const x = pad.l + slot * i + slot / 2;
+    ctx.fillText(l, x, h - 6);
+  });
+  ctx.textAlign = 'left';
+}
+
+function drawDonut(canvas, segments, opts = {}) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2;
+  const radius = Math.min(w, h) / 2 - 4;
+  const inner = radius * 0.6;
+  const total = segments.reduce((s, seg) => s + seg.value, 0) || 1;
+  let start = -Math.PI / 2;
+  segments.forEach(seg => {
+    const angle = (seg.value / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, start, start + angle);
+    ctx.arc(cx, cy, inner, start + angle, start, true);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+    start += angle;
+  });
+}
+
+function drawRadar(canvas, labels, values, opts = {}) {
+  const { ctx, w, h } = setupCanvas(canvas);
+  ctx.clearRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2;
+  const radius = Math.min(w, h) / 2 - 24;
+  const max = opts.max || 10;
+  const n = labels.length;
+  const angleFor = i => -Math.PI / 2 + (Math.PI * 2 * i) / n;
+
+  ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+  ctx.fillStyle = '#64748b';
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  for (let ring = 1; ring <= 4; ring++) {
+    ctx.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = angleFor(i % n);
+      const r = (radius * ring) / 4;
+      const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  for (let i = 0; i < n; i++) {
+    const a = angleFor(i);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a) * radius, cy + Math.sin(a) * radius);
+    ctx.stroke();
+    const lx = cx + Math.cos(a) * (radius + 14), ly = cy + Math.sin(a) * (radius + 14);
+    ctx.fillText(labels[i], lx, ly);
+  }
+
+  ctx.beginPath();
+  values.forEach((v, i) => {
+    const a = angleFor(i);
+    const r = (v / max) * radius;
+    const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(139,92,246,0.35)';
+  ctx.fill();
+  ctx.strokeStyle = '#8b5cf6';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.textAlign = 'left';
+}
+
+
+// ---- js/views/dashboard.js ----
+let calViewDate = new Date();
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good Morning';
+  if (h < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
+function goalColor(cat) {
+  return { Health: '#ef4444', Finance: '#f59e0b', Learning: '#3b82f6', Career: '#8b5cf6', default: '#22c55e' }[cat] || '#22c55e';
+}
+
+function renderDashboard() {
+  const db = Store.db;
+  const today = Store.today();
+  const now = new Date();
+  const name = db.profile.name;
+  const first = name.split(' ')[0];
+
+  const gratitudeItems = today.journal.gratitude.filter(g => g.trim());
+  const winsItems = today.journal.wins.filter(w => w.trim());
+
+  const html = `
+  <div class="topbar">
+    <div>
+      <h1>${greeting()}, ${first}! 👋</h1>
+      <div class="sub">Every day is a new opportunity to become a better version of yourself.</div>
+    </div>
+    <div class="topbar-right">
+      <div class="weather">
+        <span style="font-size:22px">⛅</span>
+        <div>
+          <div class="temp">${db.weather.temp}°C</div>
+          <div class="loc">${db.weather.location}</div>
+        </div>
+      </div>
+      <div class="datetime">
+        <div class="day">${now.toLocaleDateString('en-US', { weekday: 'long' })}</div>
+        <div class="date">${now.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+      </div>
+      <div class="datetime"><div class="time">${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div></div>
+    </div>
+  </div>
+
+  <div class="grid stat-row">
+    ${statCard('😊', 'Mood', today.mood != null ? `${today.mood}/10` : '—', today.moodLabel || 'Not logged', '#eef2ff', '#6366f1')}
+    ${statCard('⚡', 'Energy', today.energy != null ? `${today.energy}/10` : '—', today.energy >= 7 ? 'Good' : today.energy >= 4 ? 'Fair' : 'Low', '#fef3c7', '#f59e0b')}
+    ${statCard('😴', 'Sleep', today.sleepHrs != null ? `${today.sleepHrs} <small>hrs</small>` : '—', today.sleepHrs >= 7 ? 'Good' : 'Fair', '#ede9fe', '#8b5cf6')}
+    ${statCard('🏃', 'Exercise', today.exerciseDone ? '✔' : '—', today.exerciseDone ? 'Completed' : 'Not yet', '#dcfce7', '#22c55e')}
+    ${statCard('💧', 'Water', `${today.water} <small>L</small>`, 'Goal: 3 L', '#dbeafe', '#3b82f6')}
+    ${statCard('❤️', 'Stress', today.stress != null ? `${today.stress}/10` : '—', today.stress <= 3 ? 'Low' : today.stress <= 6 ? 'Manageable' : 'High', '#fee2e2', '#ef4444')}
+  </div>
+
+  <div class="grid two-col content-row">
+    <div class="card">
+      <div class="card-head">
+        <h3>📝 Today's Journal</h3>
+        <span class="meta">${fmtLong(todayKey())}</span>
+      </div>
+      ${today.journal.feel ? `
+        <div class="journal-q">How do I feel today?</div>
+        <div class="journal-a">${escapeHtml(today.journal.feel)}</div>
+        <div class="mini-cols">
+          <div>
+            <div class="mini-title green">Gratitude</div>
+            <ol class="mini-list ol">${gratitudeItems.map(g => `<li>${escapeHtml(g)}</li>`).join('') || '<li style="list-style:none">—</li>'}</ol>
+          </div>
+          <div>
+            <div class="mini-title blue">Today's Wins</div>
+            <ul class="mini-list">${winsItems.map(w => `<li>${escapeHtml(w)}</li>`).join('') || '<li style="list-style:none">—</li>'}</ul>
+          </div>
+        </div>
+        ${today.journal.challenge ? `<div style="margin-top:14px"><div class="mini-title red">Challenge</div><div class="journal-a" style="margin-bottom:0">${escapeHtml(today.journal.challenge)}</div></div>` : ''}
+      ` : `<div class="empty-state" style="padding:20px 0">You haven't journaled today yet.<br><br><button class="btn" onclick="navigate('journal')">Write Today's Entry</button></div>`}
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>📷 Today's Photo</h3></div>
+      ${today.photo.dataUrl
+        ? `<div class="photo-box"><img src="${today.photo.dataUrl}" alt="today"/></div>
+           <div class="photo-meta"><span>📍 ${escapeHtml(today.photo.location || 'No location')}</span><span>${fmtLong(todayKey())}</span></div>`
+        : `<label class="photo-placeholder">
+             <span style="font-size:28px">📸</span>
+             <span>Click to upload today's photo</span>
+             <input type="file" accept="image/*" style="display:none" onchange="handlePhotoUpload(event, '${todayKey()}')" />
+           </label>`
+      }
+    </div>
+  </div>
+
+  <div class="grid two-col content-row">
+    <div class="grid" style="grid-template-columns:1fr; gap:16px">
+      <div class="grid split-2">
+        <div class="card">
+          <div class="card-head"><h3>Mood Trend <span class="meta">(Last 7 Days)</span></h3><span class="badge" id="moodAvgBadge"></span></div>
+          <canvas id="moodChart" style="width:100%;height:150px"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Sleep Trend <span class="meta">(Last 7 Days)</span></h3><span class="badge" id="sleepAvgBadge"></span></div>
+          <canvas id="sleepChart" style="width:100%;height:150px"></canvas>
+        </div>
+      </div>
+      <div class="grid split-4">
+        <div class="card">
+          <div class="card-head"><h3>Expense Summary</h3><span class="meta">This Month</span></div>
+          <div id="expenseSummaryBody"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Reading Progress</h3><span class="meta">This Month</span></div>
+          <div id="readingProgressBody"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>Health Overview</h3><span class="meta">This Week</span></div>
+          <div id="healthOverviewBody"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>AI Insight</h3></div>
+          <div class="insight-box">
+            <div class="insight-icon">🤖</div>
+            <div class="insight-text" id="aiInsightText"></div>
+            <button class="insight-btn" onclick="navigate('aicoach')">Ask AI Coach</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid" style="grid-template-columns:1fr; gap:16px">
+      <div class="card">
+        <div class="card-head">
+          <h3 id="calMonthLabel"></h3>
+          <div class="cal-nav">
+            <button onclick="calShift(-1)">‹</button>
+            <button onclick="calShift(1)">›</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Today's Tasks</h3><span class="link" onclick="navigate('tasks')">View All</span></div>
+        <div id="todaysTasksBody"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Goals Overview</h3><span class="link" onclick="navigate('goals')">View All</span></div>
+        <div id="goalsOverviewBody"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Today's Habits</h3><span class="link" onclick="navigate('habits')">Edit</span></div>
+        <div id="todaysHabitsBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card content-row">
+    <div class="card-head"><h3>Recent Memories</h3><span class="link" onclick="navigate('timeline')">View Timeline</span></div>
+    <div class="memories-strip" id="memoriesStrip"></div>
+  </div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+
+  renderExpenseSummary();
+  renderReadingProgress();
+  renderHealthOverview();
+  renderAIInsight('aiInsightText');
+  renderCalendar();
+  renderTodaysTasks();
+  renderGoalsOverview();
+  renderTodaysHabits();
+  renderMemoriesStrip();
+  renderTrendCharts();
+}
+
+function statCard(emoji, label, value, sub, bg, fg) {
+  return `<div class="card stat-card">
+    <div class="stat-icon" style="background:${bg};color:${fg}">${emoji}</div>
+    <div class="stat-label">${label}</div>
+    <div class="stat-value">${value}</div>
+    <div class="stat-sub">${sub}</div>
+  </div>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function last7Keys() {
+  const keys = [];
+  for (let i = 6; i >= 0; i--) keys.push(dateKey(addDays(new Date(), -i)));
+  return keys;
+}
+
+function renderTrendCharts() {
+  const keys = last7Keys();
+  const moodVals = keys.map(k => Store.db.days[k]?.mood ?? 0);
+  const sleepVals = keys.map(k => Store.db.days[k]?.sleepHrs ?? 0);
+  const labels = keys.map(fmtShort);
+  drawLineChart(document.getElementById('moodChart'), labels, moodVals, { color: '#22c55e', min: 0, max: 10 });
+  drawBarChart(document.getElementById('sleepChart'), labels, sleepVals, { color: '#8b5cf6', max: 12 });
+  const moodAvg = (moodVals.reduce((a, b) => a + b, 0) / moodVals.filter(v => v > 0).length || 0).toFixed(1);
+  const sleepAvg = (sleepVals.reduce((a, b) => a + b, 0) / sleepVals.filter(v => v > 0).length || 0).toFixed(1);
+  document.getElementById('moodAvgBadge').textContent = `Avg: ${moodAvg}/10`;
+  document.getElementById('sleepAvgBadge').textContent = `Avg: ${sleepAvg} hrs`;
+}
+
+function renderExpenseSummary() {
+  const txs = Store.db.finance.transactions.filter(t => t.type === 'expense' && t.date.slice(0, 7) === todayKey().slice(0, 7));
+  const byCat = {};
+  txs.forEach(t => byCat[t.category] = (byCat[t.category] || 0) + t.amount);
+  const total = txs.reduce((s, t) => s + t.amount, 0);
+  const colors = ['#f59e0b', '#3b82f6', '#8b5cf6', '#22c55e', '#94a3b8', '#ef4444'];
+  const segs = Object.entries(byCat).map(([cat, amt], i) => ({ label: cat, value: amt, color: colors[i % colors.length] }));
+  const el = document.getElementById('expenseSummaryBody');
+  if (!segs.length) { el.innerHTML = '<div class="empty-state">No expenses logged.</div>'; return; }
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px">
+      <canvas id="expenseDonut" style="width:90px;height:90px;flex-shrink:0"></canvas>
+      <div>
+        <div style="font-size:18px;font-weight:700">Nu. ${total.toLocaleString()}</div>
+        <div style="margin-top:6px">
+          ${segs.map(s => `<div style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:3px"><span style="width:8px;height:8px;border-radius:50%;background:${s.color};display:inline-block"></span>${s.label} <span style="color:var(--text-dim)">${Math.round(s.value / total * 100)}%</span></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  drawDonut(document.getElementById('expenseDonut'), segs);
+}
+
+function renderReadingProgress() {
+  const book = Store.db.books.find(b => b.status === 'reading') || Store.db.books[0];
+  const el = document.getElementById('readingProgressBody');
+  if (!book) { el.innerHTML = '<div class="empty-state">No book in progress.</div>'; return; }
+  const pct = Math.round((book.pagesRead / book.totalPages) * 100) || 0;
+  el.innerHTML = `
+    <div style="display:flex;gap:10px">
+      <div class="book-cover">📖</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13px">${escapeHtml(book.title)}</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${escapeHtml(book.author)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--accent)"></div></div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px">${pct}%</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:var(--text-dim)">
+      <span>Pages Read<br><b style="color:var(--text)">${book.pagesRead} / ${book.totalPages}</b></span>
+      <span>Reading Streak<br><b style="color:var(--text)">${Store.journalStreak()} days</b></span>
+    </div>`;
+}
+
+function renderHealthOverview() {
+  const keys = last7Keys();
+  const days = keys.map(k => Store.db.days[k]).filter(Boolean);
+  const avg = (arr) => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+  const weight = Store.db.healthLog?.weight ?? 97;
+  const steps = Math.round(avg(days.map(d => d.steps || 8245)));
+  const calories = Math.round(avg(days.map(d => d.calories || 2120)));
+  const water = avg(days.map(d => d.water || 0)).toFixed(1);
+  document.getElementById('healthOverviewBody').innerHTML = `
+    ${healthRow('⚖️', 'Weight', `${weight} kg`, '#22c55e')}
+    ${healthRow('👣', 'Steps (Avg)', steps.toLocaleString(), '#f59e0b')}
+    ${healthRow('🔥', 'Calories (Avg)', calories.toLocaleString(), '#ef4444')}
+    ${healthRow('💧', 'Water (Avg)', `${water} L`, '#3b82f6')}
+  `;
+}
+function healthRow(icon, label, val, color) {
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:12px">
+    <span style="color:var(--text-dim)">${icon} ${label}</span><b style="color:${color}">${val}</b>
+  </div>`;
+}
+
+function renderGoalsOverview() {
+  const el = document.getElementById('goalsOverviewBody');
+  const goals = Store.db.goals.slice(0, 4);
+  if (!goals.length) { el.innerHTML = '<div class="empty-state">No goals yet.</div>'; return; }
+  el.innerHTML = goals.map(g => `
+    <div class="progress-row">
+      <div class="progress-icon" style="background:${goalColor(g.category)}22;color:${goalColor(g.category)}">${g.icon}</div>
+      <div class="progress-body">
+        <div class="progress-title-row"><span>${escapeHtml(g.title)}</span><span class="pct">${g.progress}%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${g.progress}%;background:${goalColor(g.category)}"></div></div>
+      </div>
+    </div>`).join('');
+}
+
+function renderTodaysTasks() {
+  const el = document.getElementById('todaysTasksBody');
+  const tk = todayKey();
+  const tasks = Store.db.tasks.filter(t => !t.done && t.dueDate <= tk).sort((a, b) => a.dueDate.localeCompare(b.dueDate)).slice(0, 5);
+  if (!tasks.length) { el.innerHTML = '<div class="empty-state">Nothing due. <span class="link" onclick="navigate(\'tasks\')">Add a task</span></div>'; return; }
+  el.innerHTML = tasks.map(t => {
+    const overdue = t.dueDate < tk;
+    return `<div class="habit-row" onclick="toggleTaskOnDashboard('${t.id}')">
+      <div class="habit-check">${''}</div>
+      <span class="habit-label" style="flex:1">${escapeHtml(t.title)}</span>
+      <span class="habit-goal" style="color:${overdue ? 'var(--red)' : 'var(--text-dim)'}">${overdue ? 'Overdue' : fmtShort(t.dueDate)}</span>
+    </div>`;
+  }).join('');
+}
+function toggleTaskOnDashboard(id) {
+  Store.toggleTask(id);
+  renderTodaysTasks();
+}
+
+function renderTodaysHabits() {
+  const el = document.getElementById('todaysHabitsBody');
+  const today = Store.today();
+  const list = Store.db.habitList;
+  if (!list.length) { el.innerHTML = '<div class="empty-state">No habits set up. <span class="link" onclick="navigate(\'habits\')">Add some</span></div>'; return; }
+  el.innerHTML = list.map(h => {
+    const checked = !!today.habits[h];
+    return `<div class="habit-row" onclick="toggleHabit('${escapeHtml(h).replace(/'/g, "\\'")}')">
+      <div class="habit-check ${checked ? 'checked' : ''}">${checked ? '✓' : ''}</div>
+      <span class="habit-label ${checked ? 'checked-text' : ''}">${escapeHtml(h)}</span>
+      ${h.toLowerCase().includes('water') ? `<span class="habit-goal">${today.water} / 3 L</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function toggleHabit(name) {
+  const today = Store.today();
+  today.habits[name] = !today.habits[name];
+  Store.save();
+  renderTodaysHabits();
+  updateSidebarStreaks();
+}
+
+function renderMemoriesStrip() {
+  const el = document.getElementById('memoriesStrip');
+  const keys = Store.sortedDayKeys().filter(k => k !== todayKey()).sort().reverse().slice(0, 7);
+  if (!keys.length) { el.innerHTML = '<div class="empty-state">No memories yet — keep journaling!</div>'; return; }
+  el.innerHTML = keys.map(k => {
+    const d = Store.db.days[k];
+    const title = d.journal.wins.filter(w => w.trim())[0] || d.journal.feel?.slice(0, 24) || 'Untitled day';
+    return `<div class="memory-card" style="cursor:pointer" onclick="navigate('timeline')">
+      ${d.photo.dataUrl ? `<img src="${d.photo.dataUrl}"/>` : `<div class="ph">${d.moodLabel === 'Happy' ? '😊' : '📅'}</div>`}
+      <div class="memory-date">${fmtShort(k)}</div>
+      <div class="memory-title">${escapeHtml(title)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCalendar() {
+  const el = document.getElementById('calGrid');
+  const y = calViewDate.getFullYear(), m = calViewDate.getMonth();
+  document.getElementById('calMonthLabel').textContent = calViewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const first = new Date(y, m, 1);
+  const startOffset = (first.getDay() + 6) % 7; // Monday-first
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const daysInPrevMonth = new Date(y, m, 0).getDate();
+  let cells = [];
+  for (let i = startOffset - 1; i >= 0; i--) cells.push({ day: daysInPrevMonth - i, other: true, key: null });
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, other: false, key: dateKey(new Date(y, m, d)) });
+  while (cells.length % 7 !== 0) {
+    const nd = cells.length - (startOffset + daysInMonth) + 1;
+    cells.push({ day: nd, other: true, key: null });
+  }
+  const dows = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  let html = dows.map(d => `<div class="dow">${d}</div>`).join('');
+  const tk = todayKey();
+  html += cells.map(c => {
+    const isToday = c.key === tk;
+    const hasEntry = c.key && Store.db.days[c.key] && (Store.db.days[c.key].journal.feel || Store.db.days[c.key].mood != null && !c.other);
+    return `<div class="cal-day ${c.other ? 'other' : ''} ${isToday ? 'today' : ''}" ${c.key ? `onclick="selectCalDay('${c.key}')"` : ''}>
+      ${c.day}${hasEntry && !c.other ? '<span class="dot"></span>' : ''}
+    </div>`;
+  }).join('');
+  el.innerHTML = html;
+}
+function calShift(dir) {
+  calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth() + dir, 1);
+  renderCalendar();
+}
+function selectCalDay(key) {
+  navigate('journal', { date: key });
+}
+
+function handlePhotoUpload(event, dayKey) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const day = Store.day(dayKey);
+    day.photo.dataUrl = e.target.result;
+    Store.save();
+    if (currentView === 'dashboard') renderDashboard();
+    else if (currentView === 'photos') renderPhotos();
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateSidebarStreaks() {
+  document.getElementById('journalStreakNum').textContent = Store.journalStreak();
+  document.getElementById('exerciseStreakNum').textContent = Store.exerciseStreak();
+}
+
+
+// ---- js/views/tasks.js ----
+let taskFilter = 'today';
+const PRIORITY_COLOR = { high: '#ef4444', medium: '#f59e0b', low: '#3b82f6' };
+
+function renderTasks() {
+  const html = `
+  <div class="topbar">
+    <div><h1>✔️ Tasks</h1><div class="sub">Your to-do list, right alongside your journal.</div></div>
+  </div>
+
+  <div class="grid two-col">
+    <div class="card">
+      <div class="card-head"><h3>Add a Task</h3></div>
+      <div class="row">
+        <div class="field" style="flex:2"><label>Title</label><input id="taskTitleInput" placeholder="What do you need to do?" onkeydown="if(event.key==='Enter')addTaskFromForm()"/></div>
+        <div class="field"><label>Due Date</label><input type="date" id="taskDueInput" value="${todayKey()}"/></div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Priority</label>
+          <select id="taskPriorityInput">
+            <option value="high">High</option>
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div class="field"><label>Category (optional)</label><input id="taskCategoryInput" placeholder="e.g. Work, Personal"/></div>
+      </div>
+      <button class="btn" onclick="addTaskFromForm()">Add Task</button>
+
+      <div class="tabs" style="margin-top:20px">
+        <div class="tab ${taskFilter === 'today' ? 'active' : ''}" onclick="setTaskFilter('today')">Today</div>
+        <div class="tab ${taskFilter === 'upcoming' ? 'active' : ''}" onclick="setTaskFilter('upcoming')">Upcoming</div>
+        <div class="tab ${taskFilter === 'all' ? 'active' : ''}" onclick="setTaskFilter('all')">All</div>
+        <div class="tab ${taskFilter === 'completed' ? 'active' : ''}" onclick="setTaskFilter('completed')">Completed</div>
+      </div>
+      <div id="taskList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>Overview</h3></div>
+      <div id="taskOverview"></div>
+    </div>
+  </div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+  renderTaskList();
+  renderTaskOverview();
+}
+
+function addTaskFromForm() {
+  const titleEl = document.getElementById('taskTitleInput');
+  const title = titleEl.value.trim();
+  if (!title) return;
+  Store.addTask(title, {
+    dueDate: document.getElementById('taskDueInput').value || todayKey(),
+    priority: document.getElementById('taskPriorityInput').value,
+    category: document.getElementById('taskCategoryInput').value.trim()
+  });
+  titleEl.value = '';
+  document.getElementById('taskCategoryInput').value = '';
+  document.getElementById('taskDueInput').value = todayKey();
+  renderTaskList();
+  renderTaskOverview();
+  titleEl.focus();
+}
+
+function setTaskFilter(filter) {
+  taskFilter = filter;
+  document.querySelectorAll('.tabs .tab').forEach(el => el.classList.remove('active'));
+  renderTasks();
+}
+
+function filteredTasks() {
+  const tk = todayKey();
+  const tasks = Store.db.tasks.slice().sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
+  if (taskFilter === 'today') return tasks.filter(t => !t.done && t.dueDate <= tk);
+  if (taskFilter === 'upcoming') return tasks.filter(t => !t.done && t.dueDate > tk);
+  if (taskFilter === 'completed') return tasks.filter(t => t.done);
+  return tasks;
+}
+
+function renderTaskList() {
+  const el = document.getElementById('taskList');
+  const tasks = filteredTasks();
+  if (!tasks.length) { el.innerHTML = '<div class="empty-state">Nothing here. Enjoy the calm 🌿</div>'; return; }
+  const tk = todayKey();
+  el.innerHTML = tasks.map(t => {
+    const overdue = !t.done && t.dueDate && t.dueDate < tk;
+    return `<div class="list-item">
+      <div class="habit-check ${t.done ? 'checked' : ''}" style="cursor:pointer" onclick="toggleTaskFull('${t.id}')">${t.done ? '✓' : ''}</div>
+      <div style="flex:1">
+        <div class="${t.done ? 'checked-text' : ''}" style="font-size:13.5px;font-weight:600">${escapeHtml(t.title)}</div>
+        <div style="font-size:11px;color:${overdue ? 'var(--red)' : 'var(--text-dim)'};margin-top:2px">
+          ${t.dueDate ? (overdue ? 'Overdue · ' : '') + fmtLong(t.dueDate) : 'No due date'}
+          ${t.category ? ' · ' + escapeHtml(t.category) : ''}
+        </div>
+      </div>
+      <span class="pill" style="background:${PRIORITY_COLOR[t.priority]}22;color:${PRIORITY_COLOR[t.priority]}">${t.priority}</span>
+      <button class="icon-btn danger" onclick="deleteTaskFull('${t.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function toggleTaskFull(id) {
+  Store.toggleTask(id);
+  renderTaskList();
+  renderTaskOverview();
+}
+function deleteTaskFull(id) {
+  Store.removeTask(id);
+  renderTaskList();
+  renderTaskOverview();
+}
+
+function renderTaskOverview() {
+  const el = document.getElementById('taskOverview');
+  const tasks = Store.db.tasks;
+  const tk = todayKey();
+  const dueToday = tasks.filter(t => !t.done && t.dueDate <= tk).length;
+  const upcoming = tasks.filter(t => !t.done && t.dueDate > tk).length;
+  const completed = tasks.filter(t => t.done).length;
+  const total = tasks.length || 1;
+  const pct = Math.round((completed / total) * 100);
+  el.innerHTML = `
+    <div class="grid split-3" style="margin-bottom:16px">
+      ${statCard('📌', 'Due / Overdue', dueToday, 'Needs attention', '#fee2e2', '#ef4444')}
+      ${statCard('🗓️', 'Upcoming', upcoming, 'Scheduled', '#dbeafe', '#3b82f6')}
+      ${statCard('✅', 'Completed', completed, `${pct}% done`, '#dcfce7', '#22c55e')}
+    </div>
+    <div class="progress-row">
+      <div class="progress-body">
+        <div class="progress-title-row"><span>Overall Completion</span><span class="pct">${pct}%</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--accent)"></div></div>
+      </div>
+    </div>
+  `;
+}
+
+
+// ---- js/views/journal.js ----
+let journalEditDate = todayKey();
+const MOODS = [
+  { label: 'Happy', emo: '😊' }, { label: 'Calm', emo: '😌' }, { label: 'Sad', emo: '😢' },
+  { label: 'Angry', emo: '😡' }, { label: 'Anxious', emo: '😰' }, { label: 'Excited', emo: '🤩' }
+];
+
+function renderJournal(params) {
+  if (params && params.date) journalEditDate = params.date;
+  const day = Store.day(journalEditDate);
+  const isToday = journalEditDate === todayKey();
+
+  const html = `
+  <div class="topbar">
+    <div>
+      <h1>📝 Journal</h1>
+      <div class="sub">${isToday ? "Today" : fmtLong(journalEditDate)} — takes less than 3 minutes.</div>
+    </div>
+    <div class="topbar-right">
+      <input type="date" id="journalDatePicker" value="${journalEditDate}" style="width:auto" onchange="renderJournal({date:this.value})" />
+    </div>
+  </div>
+
+  <div class="grid two-col">
+    <div class="card">
+      <div class="field">
+        <label>Mood</label>
+        <div class="mood-picker" id="moodPicker">
+          ${MOODS.map(m => `<div class="mood-opt ${day.moodLabel === m.label ? 'selected' : ''}" onclick="setMood('${m.label}')"><span class="emo">${m.emo}</span>${m.label}</div>`).join('')}
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Mood Score (1-10)</label>
+          <div class="scale-picker" id="moodScale">${scaleRow(day.mood, 'mood')}</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Energy (1-10)</label>
+          <div class="scale-picker" id="energyScale">${scaleRow(day.energy, 'energy')}</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Stress (1-10)</label>
+          <div class="scale-picker" id="stressScale">${scaleRow(day.stress, 'stress')}</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Sleep (hrs)</label>
+          <input type="number" step="0.5" min="0" max="14" id="sleepInput" value="${day.sleepHrs ?? ''}" onchange="updateDayField('sleepHrs', parseFloat(this.value))"/>
+        </div>
+        <div class="field">
+          <label>Water (L)</label>
+          <input type="number" step="0.1" min="0" id="waterInput" value="${day.water ?? 0}" onchange="updateDayField('water', parseFloat(this.value))"/>
+        </div>
+      </div>
+      <div class="field">
+        <label><input type="checkbox" style="width:auto;display:inline-block;margin-right:8px" ${day.exerciseDone ? 'checked' : ''} onchange="updateDayField('exerciseDone', this.checked)"/>Exercised today</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label>How do I feel today?</label>
+        <textarea rows="4" id="feelInput" onchange="updateJournalField('feel', this.value)">${day.journal.feel}</textarea>
+      </div>
+      <div class="field">
+        <label>Gratitude — three things</label>
+        ${[0, 1, 2].map(i => `<input style="margin-bottom:6px" placeholder="Grateful for..." value="${escapeHtml(day.journal.gratitude[i] || '')}" onchange="updateGratitude(${i}, this.value)"/>`).join('')}
+      </div>
+      <div class="field">
+        <label>Wins today</label>
+        ${[0, 1].map(i => `<input style="margin-bottom:6px" placeholder="A win, big or small..." value="${escapeHtml(day.journal.wins[i] || '')}" onchange="updateWins(${i}, this.value)"/>`).join('')}
+      </div>
+      <div class="field">
+        <label>Challenge — what went wrong today?</label>
+        <textarea rows="2" onchange="updateJournalField('challenge', this.value)">${day.journal.challenge}</textarea>
+      </div>
+      <div class="field">
+        <label>Reflection — what should I improve tomorrow?</label>
+        <textarea rows="2" onchange="updateJournalField('reflection', this.value)">${day.journal.reflection}</textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="card content-row">
+    <div class="card-head"><h3>Past Entries</h3></div>
+    <div id="journalHistory"></div>
+  </div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+  renderJournalHistory();
+}
+
+function scaleRow(current, field) {
+  let out = '';
+  for (let i = 1; i <= 10; i++) {
+    out += `<div class="scale-opt ${current === i ? 'selected' : ''}" onclick="updateDayField('${field}', ${i})">${i}</div>`;
+  }
+  return out;
+}
+
+function setMood(label) {
+  const day = Store.day(journalEditDate);
+  day.moodLabel = label;
+  Store.save();
+  renderJournal();
+}
+function updateDayField(field, value) {
+  const day = Store.day(journalEditDate);
+  day[field] = value;
+  Store.save();
+  if (['mood', 'energy', 'stress'].includes(field)) renderJournal();
+  updateSidebarStreaks();
+}
+function updateJournalField(field, value) {
+  Store.day(journalEditDate).journal[field] = value;
+  Store.save();
+  updateSidebarStreaks();
+}
+function updateGratitude(i, value) {
+  Store.day(journalEditDate).journal.gratitude[i] = value;
+  Store.save();
+}
+function updateWins(i, value) {
+  Store.day(journalEditDate).journal.wins[i] = value;
+  Store.save();
+}
+
+function renderJournalHistory() {
+  const el = document.getElementById('journalHistory');
+  const keys = Store.sortedDayKeys().filter(k => k !== journalEditDate && Store.db.days[k].journal.feel).sort().reverse().slice(0, 10);
+  if (!keys.length) { el.innerHTML = '<div class="empty-state">No past entries yet.</div>'; return; }
+  el.innerHTML = keys.map(k => {
+    const d = Store.db.days[k];
+    return `<div class="entry-card" style="cursor:pointer" onclick="renderJournal({date:'${k}'})">
+      <div class="entry-date">${fmtLong(k)} ${d.moodLabel ? '· ' + d.moodLabel : ''} ${d.mood != null ? '· Mood ' + d.mood + '/10' : ''}</div>
+      <div class="journal-a" style="margin-bottom:4px">${escapeHtml(d.journal.feel).slice(0, 200)}</div>
+    </div>`;
+  }).join('');
+}
+
+
+// ---- js/views/timeline.js ----
+function renderTimeline() {
+  const keys = Store.sortedDayKeys().sort().reverse();
+  const today = new Date();
+
+  const onThisDay = [];
+  for (let y = 1; y <= 5; y++) {
+    const d = new Date(today.getFullYear() - y, today.getMonth(), today.getDate());
+    const k = dateKey(d);
+    if (Store.db.days[k] && (Store.db.days[k].journal.feel || Store.db.days[k].photo.dataUrl)) {
+      onThisDay.push({ years: y, key: k });
+    }
+  }
+
+  const html = `
+  <div class="topbar">
+    <div><h1>🕐 Timeline</h1><div class="sub">Your life, one day at a time.</div></div>
+  </div>
+
+  ${onThisDay.length ? `
+  <div class="card content-row">
+    <div class="card-head"><h3>On This Day</h3></div>
+    ${onThisDay.map(o => {
+      const d = Store.db.days[o.key];
+      return `<div class="entry-card">
+        <div class="entry-date">${o.years} year${o.years > 1 ? 's' : ''} ago — ${fmtLong(o.key)}</div>
+        <div class="journal-a">${escapeHtml(d.journal.feel || '')}</div>
+      </div>`;
+    }).join('')}
+  </div>` : ''}
+
+  <div class="card">
+    <div class="card-head"><h3>All Entries</h3><span class="meta">${keys.filter(k => Store.db.days[k].journal.feel || Store.db.days[k].photo.dataUrl).length} days recorded</span></div>
+    <div id="timelineFeed"></div>
+  </div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+
+  const feed = document.getElementById('timelineFeed');
+  const withContent = keys.filter(k => {
+    const d = Store.db.days[k];
+    return d.journal.feel || d.photo.dataUrl || Object.values(d.habits).some(Boolean);
+  });
+  if (!withContent.length) { feed.innerHTML = '<div class="empty-state">Nothing logged yet. Start today!</div>'; return; }
+  feed.innerHTML = withContent.map(k => {
+    const d = Store.db.days[k];
+    return `<div class="entry-card" style="display:flex;gap:14px;cursor:pointer" onclick="navigate('journal',{date:'${k}'})">
+      ${d.photo.dataUrl ? `<img src="${d.photo.dataUrl}" style="width:70px;height:70px;object-fit:cover;border-radius:10px;flex-shrink:0"/>` : `<div style="width:70px;height:70px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px">${d.moodLabel === 'Happy' ? '😊' : d.moodLabel === 'Sad' ? '😢' : '📅'}</div>`}
+      <div style="flex:1">
+        <div class="entry-date">${fmtLong(k)} · ${weekdayName(k)} ${d.mood != null ? `· Mood ${d.mood}/10` : ''}</div>
+        <div class="journal-a" style="margin-bottom:0">${escapeHtml((d.journal.feel || 'No journal entry, but data logged.').slice(0, 160))}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
+// ---- js/views/goals.js ----
+const GOAL_ICONS = { Health: '❤️', Career: '💼', Finance: '💰', Learning: '💻', Relationships: '🤝', Travel: '✈️' };
+
+function renderGoals() {
+  const cats = ['Health', 'Career', 'Finance', 'Learning', 'Relationships', 'Travel'];
+  const html = `
+  <div class="topbar">
+    <div><h1>🎯 Goals</h1><div class="sub">Long-term goals across every area of life.</div></div>
+    <button class="btn" onclick="openGoalForm()">+ New Goal</button>
+  </div>
+  <div id="goalForm"></div>
+  <div class="grid split-2" id="goalsList"></div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+  renderGoalsList();
+}
+
+function renderGoalsList() {
+  const el = document.getElementById('goalsList');
+  if (!Store.db.goals.length) { el.innerHTML = '<div class="empty-state">No goals yet. Add your first one!</div>'; return; }
+  const byCat = {};
+  Store.db.goals.forEach(g => { (byCat[g.category] = byCat[g.category] || []).push(g); });
+  el.innerHTML = Object.entries(byCat).map(([cat, goals]) => `
+    <div class="card">
+      <div class="card-head"><h3>${GOAL_ICONS[cat] || '🎯'} ${cat}</h3></div>
+      ${goals.map(g => `
+        <div class="progress-row">
+          <div class="progress-icon" style="background:${goalColor(cat)}22;color:${goalColor(cat)}">${g.icon}</div>
+          <div class="progress-body">
+            <div class="progress-title-row"><span>${escapeHtml(g.title)}</span><span class="pct">${g.progress}%</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${g.progress}%;background:${goalColor(cat)}"></div></div>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button class="icon-btn" onclick="openGoalForm('${g.id}')">✎</button>
+            <button class="icon-btn danger" onclick="deleteGoal('${g.id}')">✕</button>
+          </div>
+        </div>
+        <input type="range" min="0" max="100" value="${g.progress}" style="width:100%;margin:-8px 0 14px" oninput="updateGoalProgress('${g.id}', this.value)"/>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function openGoalForm(id) {
+  const g = id ? Store.db.goals.find(g => g.id === id) : null;
+  document.getElementById('goalForm').innerHTML = `
+    <div class="card content-row">
+      <div class="card-head"><h3>${g ? 'Edit Goal' : 'New Goal'}</h3></div>
+      <div class="row">
+        <div class="field"><label>Title</label><input id="gfTitle" value="${g ? escapeHtml(g.title) : ''}" placeholder="e.g. Lose 10 kg"/></div>
+        <div class="field"><label>Category</label>
+          <select id="gfCategory">${Object.keys(GOAL_ICONS).map(c => `<option value="${c}" ${g && g.category === c ? 'selected' : ''}>${c}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="field"><label>Progress (%)</label><input id="gfProgress" type="number" min="0" max="100" value="${g ? g.progress : 0}"/></div>
+      <button class="btn" onclick="saveGoal('${id || ''}')">Save Goal</button>
+      <button class="btn ghost" onclick="document.getElementById('goalForm').innerHTML=''">Cancel</button>
+    </div>`;
+}
+
+function saveGoal(id) {
+  const title = document.getElementById('gfTitle').value.trim();
+  const category = document.getElementById('gfCategory').value;
+  const progress = Math.max(0, Math.min(100, parseInt(document.getElementById('gfProgress').value) || 0));
+  if (!title) return;
+  if (id) {
+    const g = Store.db.goals.find(g => g.id === id);
+    Object.assign(g, { title, category, progress, icon: GOAL_ICONS[category] });
+  } else {
+    Store.db.goals.push({ id: Store.uid('g'), title, category, progress, icon: GOAL_ICONS[category] });
+  }
+  Store.save();
+  document.getElementById('goalForm').innerHTML = '';
+  renderGoalsList();
+}
+
+function updateGoalProgress(id, val) {
+  const g = Store.db.goals.find(g => g.id === id);
+  g.progress = parseInt(val);
+  Store.save();
+  renderGoalsList();
+}
+
+function deleteGoal(id) {
+  Store.db.goals = Store.db.goals.filter(g => g.id !== id);
+  Store.save();
+  renderGoalsList();
+}
+
+
+// ---- js/views/habits.js ----
+function renderHabits() {
+  const html = `
+  <div class="topbar">
+    <div><h1>✅ Habits</h1><div class="sub">Small daily actions, tracked over time.</div></div>
+  </div>
+
+  <div class="grid two-col">
+    <div class="card">
+      <div class="card-head"><h3>Today's Checklist</h3><span class="meta">${fmtLong(todayKey())}</span></div>
+      <div id="habitChecklist"></div>
+      <div class="row" style="margin-top:14px">
+        <input id="newHabitInput" placeholder="Add a new habit..." />
+        <button class="btn" style="flex:0 0 auto" onclick="addHabit()">Add</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>7-Day Streak Grid</h3></div>
+      <div id="habitGrid" style="overflow-x:auto"></div>
+    </div>
+  </div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+  renderHabitChecklist();
+  renderHabitGrid();
+}
+
+function renderHabitChecklist() {
+  const el = document.getElementById('habitChecklist');
+  const today = Store.today();
+  const list = Store.db.habitList;
+  if (!list.length) { el.innerHTML = '<div class="empty-state">No habits yet. Add one below.</div>'; return; }
+  el.innerHTML = list.map(h => {
+    const checked = !!today.habits[h];
+    const streak = Store.habitStreak(h);
+    return `<div class="habit-row">
+      <div class="habit-check ${checked ? 'checked' : ''}" onclick="toggleHabitFull('${h.replace(/'/g, "\\'")}')" style="cursor:pointer">${checked ? '✓' : ''}</div>
+      <span class="habit-label ${checked ? 'checked-text' : ''}" style="flex:1">${escapeHtml(h)}</span>
+      <span class="habit-goal">🔥 ${streak}d</span>
+      <button class="icon-btn danger" onclick="removeHabit('${h.replace(/'/g, "\\'")}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function toggleHabitFull(name) {
+  toggleHabit(name);
+  renderHabitChecklist();
+  renderHabitGrid();
+}
+
+function addHabit() {
+  const input = document.getElementById('newHabitInput');
+  const val = input.value.trim();
+  if (!val || Store.db.habitList.includes(val)) return;
+  Store.db.habitList.push(val);
+  Store.save();
+  input.value = '';
+  renderHabitChecklist();
+  renderHabitGrid();
+}
+
+function removeHabit(name) {
+  Store.db.habitList = Store.db.habitList.filter(h => h !== name);
+  Store.save();
+  renderHabitChecklist();
+  renderHabitGrid();
+}
+
+function renderHabitGrid() {
+  const el = document.getElementById('habitGrid');
+  const list = Store.db.habitList;
+  if (!list.length) { el.innerHTML = '<div class="empty-state">Nothing to show yet.</div>'; return; }
+  const keys = last7Keys();
+  let html = `<table style="border-collapse:collapse;width:100%;font-size:12px">
+    <tr><th style="text-align:left;padding:6px 8px;color:var(--text-dim)">Habit</th>
+    ${keys.map(k => `<th style="padding:6px 4px;color:var(--text-dim);font-weight:600">${fmtShort(k)}</th>`).join('')}</tr>`;
+  list.forEach(h => {
+    html += `<tr><td style="padding:6px 8px;white-space:nowrap">${escapeHtml(h)}</td>`;
+    keys.forEach(k => {
+      const done = Store.db.days[k] && Store.db.days[k].habits[h];
+      html += `<td style="text-align:center;padding:6px 4px"><span style="display:inline-block;width:18px;height:18px;border-radius:5px;background:${done ? 'var(--green)' : '#eef0f7'}"></span></td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</table>`;
+  el.innerHTML = html;
+}
+
+
+// ---- js/views/health.js ----
+function renderHealth() {
+  const day = Store.today();
+  const lw = Store.db.lifeWheel;
+  const html = `
+  <div class="topbar">
+    <div><h1>❤️ Health</h1><div class="sub">Track your body, day by day.</div></div>
+  </div>
+
+  <div class="grid two-col">
+    <div class="card">
+      <div class="card-head"><h3>Log Today</h3><span class="meta">${fmtLong(todayKey())}</span></div>
+      <div class="row">
+        <div class="field"><label>Weight (kg)</label><input type="number" step="0.1" value="${day.weight ?? ''}" onchange="updateDayField('weight', parseFloat(this.value))"/></div>
+        <div class="field"><label>Steps</label><input type="number" value="${day.steps ?? ''}" onchange="updateDayField('steps', parseInt(this.value))"/></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Calories</label><input type="number" value="${day.calories ?? ''}" onchange="updateDayField('calories', parseInt(this.value))"/></div>
+        <div class="field"><label>Water (L)</label><input type="number" step="0.1" value="${day.water ?? 0}" onchange="updateDayField('water', parseFloat(this.value))"/></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Blood Pressure</label><input placeholder="120/80" value="${day.bp ?? ''}" onchange="updateDayField('bp', this.value)"/></div>
+        <div class="field"><label>Heart Rate (bpm)</label><input type="number" value="${day.heartRate ?? ''}" onchange="updateDayField('heartRate', parseInt(this.value))"/></div>
+      </div>
+      <div class="field"><label>Sleep (hrs)</label><input type="number" step="0.5" value="${day.sleepHrs ?? ''}" onchange="updateDayField('sleepHrs', parseFloat(this.value))"/></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>Life Wheel</h3><span class="meta">Score each area 1-10</span></div>
+      <canvas id="lifeWheelChart" style="width:100%;height:260px"></canvas>
+      <div class="grid split-2" style="margin-top:10px">
+        ${Object.keys(lw).map(k => `
+          <div class="field" style="margin-bottom:8px">
+            <label>${k}: ${lw[k]}</label>
+            <input type="range" min="1" max="10" value="${lw[k]}" oninput="updateLifeWheel('${k}', this.value)"/>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid split-3 content-row">
+    <div class="card"><div class="card-head"><h3>Weight Trend</h3></div><canvas id="weightChart" style="width:100%;height:140px"></canvas></div>
+    <div class="card"><div class="card-head"><h3>Steps (Last 7 Days)</h3></div><canvas id="stepsChart" style="width:100%;height:140px"></canvas></div>
+    <div class="card"><div class="card-head"><h3>Sleep (Last 7 Days)</h3></div><canvas id="healthSleepChart" style="width:100%;height:140px"></canvas></div>
+  </div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+  drawRadar(document.getElementById('lifeWheelChart'), Object.keys(lw), Object.values(lw), { max: 10 });
+
+  const keys = last7Keys();
+  const labels = keys.map(fmtShort);
+  const weights = keys.map(k => Store.db.days[k]?.weight || null);
+  const steps = keys.map(k => Store.db.days[k]?.steps || 0);
+  const sleeps = keys.map(k => Store.db.days[k]?.sleepHrs || 0);
+  const lastWeight = [...weights].reverse().find(w => w != null) || 70;
+  drawLineChart(document.getElementById('weightChart'), labels, weights.map(w => w ?? lastWeight), { color: '#22c55e' });
+  drawBarChart(document.getElementById('stepsChart'), labels, steps, { color: '#f59e0b' });
+  drawLineChart(document.getElementById('healthSleepChart'), labels, sleeps, { color: '#3b82f6', min: 0, max: 12 });
+}
+
+function updateLifeWheel(key, val) {
+  Store.db.lifeWheel[key] = parseInt(val);
+  Store.save();
+  renderHealth();
+}
+
+
+// ---- js/views/finance.js ----
+const EXPENSE_CATS = ['Food', 'Transport', 'Shopping', 'Utilities', 'Health', 'Entertainment', 'Others'];
+const INCOME_CATS = ['Salary', 'Freelance', 'Gift', 'Investment', 'Others'];
+
+function renderFinance() {
+  const html = `
+  <div class="topbar">
+    <div><h1>💳 Finance</h1><div class="sub">Daily expenses, income, and savings.</div></div>
+    <button class="btn" onclick="openTxForm()">+ Add Transaction</button>
+  </div>
+  <div id="txForm"></div>
+
+  <div class="grid split-3 content-row">
+    <div class="card stat-card"><div class="stat-label">Total Income</div><div class="stat-value" id="finIncomeTotal" style="color:var(--green)"></div></div>
+    <div class="card stat-card"><div class="stat-label">Total Expenses</div><div class="stat-value" id="finExpenseTotal" style="color:var(--red)"></div></div>
+    <div class="card stat-card"><div class="stat-label">Net Savings</div><div class="stat-value" id="finNetTotal"></div></div>
+  </div>
+
+  <div class="grid two-col content-row">
+    <div class="card">
+      <div class="card-head"><h3>Expenses by Category</h3><span class="meta">This Month</span></div>
+      <div id="finCatBreakdown"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3>Monthly Trend</h3></div>
+      <canvas id="finMonthlyChart" style="width:100%;height:200px"></canvas>
+    </div>
+  </div>
+
+  <div class="card content-row">
+    <div class="card-head"><h3>Transactions</h3></div>
+    <div id="txList"></div>
+  </div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+  renderFinanceBody();
+}
+
+function renderFinanceBody() {
+  const txs = Store.db.finance.transactions;
+  const thisMonth = todayKey().slice(0, 7);
+  const monthTxs = txs.filter(t => t.date.slice(0, 7) === thisMonth);
+  const income = monthTxs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const expense = monthTxs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  document.getElementById('finIncomeTotal').textContent = 'Nu. ' + income.toLocaleString();
+  document.getElementById('finExpenseTotal').textContent = 'Nu. ' + expense.toLocaleString();
+  const net = income - expense;
+  const netEl = document.getElementById('finNetTotal');
+  netEl.textContent = (net >= 0 ? '+' : '') + 'Nu. ' + net.toLocaleString();
+  netEl.style.color = net >= 0 ? 'var(--green)' : 'var(--red)';
+
+  const byCat = {};
+  monthTxs.filter(t => t.type === 'expense').forEach(t => byCat[t.category] = (byCat[t.category] || 0) + t.amount);
+  const colors = ['#f59e0b', '#3b82f6', '#8b5cf6', '#22c55e', '#ef4444', '#06b6d4', '#94a3b8'];
+  const segs = Object.entries(byCat).map(([cat, amt], i) => ({ label: cat, value: amt, color: colors[i % colors.length] }));
+  const catEl = document.getElementById('finCatBreakdown');
+  if (!segs.length) { catEl.innerHTML = '<div class="empty-state">No expenses this month.</div>'; }
+  else {
+    catEl.innerHTML = `<div style="display:flex;align-items:center;gap:16px">
+      <canvas id="finDonut" style="width:110px;height:110px;flex-shrink:0"></canvas>
+      <div style="flex:1">${segs.map(s => `
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+          <span><span style="width:8px;height:8px;border-radius:50%;background:${s.color};display:inline-block;margin-right:6px"></span>${s.label}</span>
+          <b>Nu. ${s.value.toLocaleString()}</b>
+        </div>`).join('')}</div>
+    </div>`;
+    drawDonut(document.getElementById('finDonut'), segs);
+  }
+
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+    months.push(d.toISOString().slice(0, 7));
+  }
+  const monthlyExp = months.map(m => txs.filter(t => t.type === 'expense' && t.date.slice(0, 7) === m).reduce((s, t) => s + t.amount, 0));
+  drawBarChart(document.getElementById('finMonthlyChart'), months.map(m => new Date(m + '-01').toLocaleDateString('en-US', { month: 'short' })), monthlyExp, { color: '#8b5cf6', fmtY: v => (v / 1000).toFixed(0) + 'k' });
+
+  const listEl = document.getElementById('txList');
+  const sorted = [...txs].sort((a, b) => b.date.localeCompare(a.date));
+  if (!sorted.length) { listEl.innerHTML = '<div class="empty-state">No transactions yet.</div>'; return; }
+  listEl.innerHTML = sorted.slice(0, 30).map(t => `
+    <div class="list-item">
+      <div style="width:36px;height:36px;border-radius:10px;background:${t.type === 'income' ? '#dcfce7' : '#fee2e2'};display:flex;align-items:center;justify-content:center">${t.type === 'income' ? '💰' : '🧾'}</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px">${escapeHtml(t.category)}</div>
+        <div style="font-size:11px;color:var(--text-dim)">${fmtLong(t.date)}${t.note ? ' · ' + escapeHtml(t.note) : ''}</div>
+      </div>
+      <b style="color:${t.type === 'income' ? 'var(--green)' : 'var(--red)'}">${t.type === 'income' ? '+' : '-'}Nu. ${t.amount.toLocaleString()}</b>
+      <button class="icon-btn danger" onclick="deleteTx('${t.id}')">✕</button>
+    </div>`).join('');
+}
+
+function openTxForm() {
+  document.getElementById('txForm').innerHTML = `
+    <div class="card content-row">
+      <div class="card-head"><h3>Add Transaction</h3></div>
+      <div class="row">
+        <div class="field"><label>Type</label>
+          <select id="txType" onchange="refreshTxCats()"><option value="expense">Expense</option><option value="income">Income</option></select>
+        </div>
+        <div class="field"><label>Category</label><select id="txCategory"></select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Amount (Nu.)</label><input id="txAmount" type="number" min="0"/></div>
+        <div class="field"><label>Date</label><input id="txDate" type="date" value="${todayKey()}"/></div>
+      </div>
+      <div class="field"><label>Note</label><input id="txNote" placeholder="Optional note"/></div>
+      <button class="btn" onclick="saveTx()">Save</button>
+      <button class="btn ghost" onclick="document.getElementById('txForm').innerHTML=''">Cancel</button>
+    </div>`;
+  refreshTxCats();
+}
+function refreshTxCats() {
+  const type = document.getElementById('txType').value;
+  const cats = type === 'income' ? INCOME_CATS : EXPENSE_CATS;
+  document.getElementById('txCategory').innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+function saveTx() {
+  const type = document.getElementById('txType').value;
+  const category = document.getElementById('txCategory').value;
+  const amount = parseFloat(document.getElementById('txAmount').value);
+  const date = document.getElementById('txDate').value || todayKey();
+  const note = document.getElementById('txNote').value.trim();
+  if (!amount || amount <= 0) return;
+  Store.db.finance.transactions.push({ id: Store.uid('t'), type, category, amount, date, note });
+  Store.save();
+  document.getElementById('txForm').innerHTML = '';
+  renderFinanceBody();
+}
+function deleteTx(id) {
+  Store.db.finance.transactions = Store.db.finance.transactions.filter(t => t.id !== id);
+  Store.save();
+  renderFinanceBody();
+}
+
+
+// ---- js/views/photos.js ----
+function renderPhotos() {
+  const keys = Store.sortedDayKeys().sort().reverse();
+  const withPhoto = keys.filter(k => Store.db.days[k].photo.dataUrl);
+  const html = `
+  <div class="topbar">
+    <div><h1>🖼️ Photos</h1><div class="sub">One picture a day. Watch your year unfold.</div></div>
+    <div class="row" style="width:auto;gap:10px">
+      <button class="btn secondary" onclick="uploadTodayPhotoPrompt()">+ Upload Today's Photo</button>
+      <button class="btn" onclick="playSlideshow()">▶ Play Slideshow</button>
+    </div>
+  </div>
+  <input type="file" id="photoUploadHidden" accept="image/*" style="display:none" onchange="handlePhotoUpload(event, '${todayKey()}'); setTimeout(renderPhotos, 300)"/>
+
+  <div class="card">
+    <div class="card-head"><h3>Photo Timeline</h3><span class="meta">${withPhoto.length} photos</span></div>
+    <div class="photo-grid">
+      ${withPhoto.length ? withPhoto.map(k => `
+        <div class="cell" onclick="viewPhoto('${k}')">
+          <img src="${Store.db.days[k].photo.dataUrl}"/>
+          <div class="cap">${fmtShort(k)}${Store.db.days[k].photo.location ? ' · ' + escapeHtml(Store.db.days[k].photo.location) : ''}</div>
+        </div>`).join('') : '<div class="empty-state">No photos yet. Upload your first one!</div>'}
+    </div>
+  </div>
+
+  <div id="photoModal"></div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function uploadTodayPhotoPrompt() {
+  document.getElementById('photoUploadHidden').click();
+}
+
+function viewPhoto(key) {
+  const d = Store.db.days[key];
+  document.getElementById('photoModal').innerHTML = `
+    <div style="position:fixed;inset:0;background:rgba(10,10,20,0.75);display:flex;align-items:center;justify-content:center;z-index:50" onclick="closePhotoModal(event)">
+      <div style="background:white;border-radius:16px;padding:16px;max-width:500px;width:90%" onclick="event.stopPropagation()">
+        <img src="${d.photo.dataUrl}" style="width:100%;border-radius:12px;max-height:400px;object-fit:cover"/>
+        <div style="margin-top:12px">
+          <div style="font-weight:700">${fmtLong(key)}</div>
+          <input placeholder="Caption" value="${escapeHtml(d.photo.caption || '')}" onchange="updatePhotoMeta('${key}','caption',this.value)" style="margin-top:8px"/>
+          <input placeholder="Location" value="${escapeHtml(d.photo.location || '')}" onchange="updatePhotoMeta('${key}','location',this.value)" style="margin-top:8px"/>
+        </div>
+        <button class="btn ghost" style="margin-top:12px;width:100%" onclick="closePhotoModal(event)">Close</button>
+      </div>
+    </div>`;
+}
+function closePhotoModal() { document.getElementById('photoModal').innerHTML = ''; }
+function updatePhotoMeta(key, field, value) {
+  Store.db.days[key].photo[field] = value;
+  Store.save();
+  renderPhotos();
+}
+
+let slideshowTimer = null;
+function playSlideshow() {
+  const keys = Store.sortedDayKeys().sort().filter(k => Store.db.days[k].photo.dataUrl);
+  if (!keys.length) { alert('No photos to show yet.'); return; }
+  let idx = 0;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:#0a0a14;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:60;color:white';
+  overlay.innerHTML = `<img id="slideImg" style="max-width:80%;max-height:70vh;border-radius:14px;object-fit:cover"/>
+    <div id="slideCap" style="margin-top:16px;font-size:14px;color:#cbd5e1"></div>
+    <button class="btn secondary" style="margin-top:20px" id="slideStop">Stop Slideshow</button>`;
+  document.body.appendChild(overlay);
+  const show = () => {
+    const k = keys[idx];
+    document.getElementById('slideImg').src = Store.db.days[k].photo.dataUrl;
+    document.getElementById('slideCap').textContent = `${fmtLong(k)}${Store.db.days[k].photo.location ? ' · ' + Store.db.days[k].photo.location : ''}`;
+    idx = (idx + 1) % keys.length;
+  };
+  show();
+  slideshowTimer = setInterval(show, 1800);
+  document.getElementById('slideStop').onclick = () => { clearInterval(slideshowTimer); overlay.remove(); };
+}
+
+
+// ---- js/views/books.js ----
+function renderBooks() {
+  const html = `
+  <div class="topbar">
+    <div><h1>📚 Books</h1><div class="sub">What you're reading, and what it taught you.</div></div>
+    <button class="btn" onclick="openBookForm()">+ Add Book</button>
+  </div>
+  <div id="bookForm"></div>
+  <div id="booksList"></div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+  renderBooksList();
+}
+
+function renderBooksList() {
+  const el = document.getElementById('booksList');
+  if (!Store.db.books.length) { el.innerHTML = '<div class="card"><div class="empty-state">No books yet. Add what you\'re reading!</div></div>'; return; }
+  el.innerHTML = Store.db.books.map(b => {
+    const pct = Math.round((b.pagesRead / b.totalPages) * 100) || 0;
+    return `<div class="card content-row">
+      <div style="display:flex;gap:16px">
+        <div class="book-cover" style="width:70px;height:98px;font-size:28px">📖</div>
+        <div style="flex:1">
+          <div style="display:flex;justify-content:space-between">
+            <div>
+              <div style="font-weight:700;font-size:15px">${escapeHtml(b.title)}</div>
+              <div style="font-size:12px;color:var(--text-dim)">${escapeHtml(b.author)}</div>
+            </div>
+            <div style="display:flex;gap:4px">
+              <span class="pill" style="background:${b.status === 'reading' ? '#dbeafe' : b.status === 'finished' ? '#dcfce7' : '#f1f2f9'};color:${b.status === 'reading' ? '#3b82f6' : b.status === 'finished' ? '#22c55e' : '#64748b'}">${b.status}</span>
+              <button class="icon-btn danger" onclick="deleteBook('${b.id}')">✕</button>
+            </div>
+          </div>
+          <div class="bar-track" style="margin-top:10px"><div class="bar-fill" style="width:${pct}%;background:var(--accent)"></div></div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px">${b.pagesRead} / ${b.totalPages} pages (${pct}%)</div>
+          <div class="row" style="margin-top:10px;align-items:end">
+            <div class="field" style="margin-bottom:0"><label>Pages read</label><input type="number" value="${b.pagesRead}" onchange="updateBookPages('${b.id}', this.value)"/></div>
+            <div class="field" style="margin-bottom:0"><label>Status</label>
+              <select onchange="updateBookStatus('${b.id}', this.value)">
+                ${['reading', 'finished', 'to-read'].map(s => `<option value="${s}" ${b.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          ${b.quotes.length ? `<div style="margin-top:10px">${b.quotes.map(q => `<div class="chip">❝ ${escapeHtml(q).slice(0, 60)}</div>`).join('')}</div>` : ''}
+          <div class="row" style="margin-top:8px">
+            <input placeholder="Add a favorite quote..." onkeydown="if(event.key==='Enter'){addBookQuote('${b.id}', this.value); this.value='';}"/>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openBookForm() {
+  document.getElementById('bookForm').innerHTML = `
+    <div class="card content-row">
+      <div class="card-head"><h3>Add Book</h3></div>
+      <div class="row">
+        <div class="field"><label>Title</label><input id="bfTitle"/></div>
+        <div class="field"><label>Author</label><input id="bfAuthor"/></div>
+      </div>
+      <div class="field"><label>Total Pages</label><input id="bfPages" type="number" value="200"/></div>
+      <button class="btn" onclick="saveBook()">Save</button>
+      <button class="btn ghost" onclick="document.getElementById('bookForm').innerHTML=''">Cancel</button>
+    </div>`;
+}
+function saveBook() {
+  const title = document.getElementById('bfTitle').value.trim();
+  const author = document.getElementById('bfAuthor').value.trim();
+  const totalPages = parseInt(document.getElementById('bfPages').value) || 100;
+  if (!title) return;
+  Store.db.books.push({ id: Store.uid('b'), title, author, totalPages, pagesRead: 0, status: 'reading', notes: '', quotes: [] });
+  Store.save();
+  document.getElementById('bookForm').innerHTML = '';
+  renderBooksList();
+}
+function updateBookPages(id, val) {
+  const b = Store.db.books.find(b => b.id === id);
+  b.pagesRead = Math.max(0, Math.min(b.totalPages, parseInt(val) || 0));
+  Store.save();
+  renderBooksList();
+}
+function updateBookStatus(id, val) {
+  Store.db.books.find(b => b.id === id).status = val;
+  Store.save();
+  renderBooksList();
+}
+function addBookQuote(id, quote) {
+  if (!quote.trim()) return;
+  Store.db.books.find(b => b.id === id).quotes.push(quote.trim());
+  Store.save();
+  renderBooksList();
+}
+function deleteBook(id) {
+  Store.db.books = Store.db.books.filter(b => b.id !== id);
+  Store.save();
+  renderBooksList();
+}
+
+
+// ---- js/views/travel.js ----
+function renderTravel() {
+  const html = `
+  <div class="topbar">
+    <div><h1>✈️ Travel</h1><div class="sub">Places you've been, and what you remember.</div></div>
+    <button class="btn" onclick="openTravelForm()">+ Add Place</button>
+  </div>
+  <div id="travelForm"></div>
+  <div class="grid split-2" id="travelList"></div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+  renderTravelList();
+}
+
+function renderTravelList() {
+  const el = document.getElementById('travelList');
+  const list = [...Store.db.travel].sort((a, b) => b.date.localeCompare(a.date));
+  if (!list.length) { el.innerHTML = '<div class="card"><div class="empty-state">No trips logged yet.</div></div>'; return; }
+  el.innerHTML = list.map(t => `
+    <div class="card">
+      <div class="card-head">
+        <h3>📍 ${escapeHtml(t.place)}</h3>
+        <button class="icon-btn danger" onclick="deleteTravel('${t.id}')">✕</button>
+      </div>
+      <div class="meta" style="margin-bottom:8px">${fmtLong(t.date)}</div>
+      <div class="journal-a">${escapeHtml(t.notes || 'No notes.')}</div>
+      ${t.expense ? `<div style="font-size:12px;color:var(--text-dim);margin-top:8px">💰 Spent: Nu. ${t.expense.toLocaleString()}</div>` : ''}
+    </div>`).join('');
+}
+
+function openTravelForm() {
+  document.getElementById('travelForm').innerHTML = `
+    <div class="card content-row">
+      <div class="card-head"><h3>Add Place</h3></div>
+      <div class="row">
+        <div class="field"><label>Place</label><input id="tfPlace"/></div>
+        <div class="field"><label>Date</label><input id="tfDate" type="date" value="${todayKey()}"/></div>
+      </div>
+      <div class="field"><label>Notes</label><textarea id="tfNotes" rows="2"></textarea></div>
+      <div class="field"><label>Expense (Nu.)</label><input id="tfExpense" type="number" value="0"/></div>
+      <button class="btn" onclick="saveTravel()">Save</button>
+      <button class="btn ghost" onclick="document.getElementById('travelForm').innerHTML=''">Cancel</button>
+    </div>`;
+}
+function saveTravel() {
+  const place = document.getElementById('tfPlace').value.trim();
+  if (!place) return;
+  Store.db.travel.push({
+    id: Store.uid('tr'), place,
+    date: document.getElementById('tfDate').value || todayKey(),
+    notes: document.getElementById('tfNotes').value.trim(),
+    expense: parseFloat(document.getElementById('tfExpense').value) || 0
+  });
+  Store.save();
+  document.getElementById('travelForm').innerHTML = '';
+  renderTravelList();
+}
+function deleteTravel(id) {
+  Store.db.travel = Store.db.travel.filter(t => t.id !== id);
+  Store.save();
+  renderTravelList();
+}
+
+
+// ---- js/views/aicoach.js ----
+function dayOfWeekAverages(field) {
+  const sums = [0, 0, 0, 0, 0, 0, 0], counts = [0, 0, 0, 0, 0, 0, 0];
+  Object.entries(Store.db.days).forEach(([k, d]) => {
+    if (d[field] == null) return;
+    const dow = new Date(k + 'T00:00:00').getDay();
+    sums[dow] += d[field]; counts[dow]++;
+  });
+  return sums.map((s, i) => counts[i] ? s / counts[i] : null);
+}
+
+function generateInsight() {
+  const dowNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const moodByDow = dayOfWeekAverages('mood');
+  let bestIdx = -1, bestVal = -Infinity;
+  moodByDow.forEach((v, i) => { if (v != null && v > bestVal) { bestVal = v; bestIdx = i; } });
+
+  const days = Object.values(Store.db.days);
+  const exDays = days.filter(d => d.mood != null);
+  const withEx = exDays.filter(d => d.exerciseDone);
+  const withoutEx = exDays.filter(d => !d.exerciseDone);
+  const avg = arr => arr.length ? arr.reduce((s, d) => s + d.mood, 0) / arr.length : null;
+  const moodWithEx = avg(withEx), moodWithoutEx = avg(withoutEx);
+  const exerciseBoost = (moodWithEx != null && moodWithoutEx != null && moodWithoutEx > 0)
+    ? Math.round(((moodWithEx - moodWithoutEx) / moodWithoutEx) * 100) : null;
+
+  const stressVals = days.filter(d => d.stress != null);
+  const avgStress = stressVals.length ? (stressVals.reduce((s, d) => s + d.stress, 0) / stressVals.length) : null;
+  const avgMood = exDays.length ? (exDays.reduce((s, d) => s + d.mood, 0) / exDays.length) : null;
+
+  let text = '';
+  if (bestIdx >= 0) text += `You were happiest on ${dowNames[bestIdx]}s. `;
+  if (exerciseBoost != null && exerciseBoost !== 0) text += `Exercise ${exerciseBoost > 0 ? 'improved' : 'lowered'} your mood by ${Math.abs(exerciseBoost)}%. `;
+  if (avgMood != null) text += `Average mood: ${avgMood.toFixed(1)}. `;
+  if (avgStress != null) text += `Average stress: ${avgStress.toFixed(1)}.`;
+  if (!text) text = 'Log a few more days and I\'ll start spotting patterns in your mood, stress, and habits.';
+  return text;
+}
+
+function renderAIInsight(elId) {
+  document.getElementById(elId).textContent = generateInsight();
+}
+
+const AI_SUGGESTIONS = [
+  'Why have I been stressed lately?',
+  'What made me happiest this month?',
+  'What habits improve my mood?',
+  'What should I focus on this week?',
+  'Summarize this month',
+  'What goals am I neglecting?'
+];
+
+function renderAiCoach() {
+  const html = `
+  <div class="topbar">
+    <div><h1>🤖 AI Coach</h1><div class="sub">Ask questions about your own life, answered from your logged data.</div></div>
+  </div>
+  <div class="card" style="max-width:800px">
+    <div class="chat-suggestions">
+      ${AI_SUGGESTIONS.map(q => `<span class="chip" onclick="askAI('${q.replace(/'/g, "\\'")}')">${q}</span>`).join('')}
+    </div>
+    <div id="chatLog" style="max-height:420px;overflow-y:auto;margin-bottom:14px">
+      <div class="chat-msg bot">Hi Dawa! Ask me anything about your mood, habits, goals, or spending — I'll answer using what you've actually logged.</div>
+    </div>
+    <div class="row">
+      <input id="chatInput" placeholder="Ask a question..." onkeydown="if(event.key==='Enter')sendChat()"/>
+      <button class="btn" style="flex:0 0 auto" onclick="sendChat()">Ask</button>
+    </div>
+  </div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  askAI(q);
+}
+
+function askAI(q) {
+  const log = document.getElementById('chatLog');
+  log.innerHTML += `<div class="chat-msg user">${escapeHtml(q)}</div>`;
+  const answer = answerQuestion(q);
+  log.innerHTML += `<div class="chat-msg bot">${answer}</div>`;
+  log.scrollTop = log.scrollHeight;
+}
+
+function answerQuestion(qRaw) {
+  const q = qRaw.toLowerCase();
+  const days = Object.entries(Store.db.days).sort((a, b) => a[0].localeCompare(b[0]));
+
+  if (q.includes('stress')) {
+    const stressed = days.filter(([k, d]) => d.stress != null && d.stress >= 6);
+    if (!stressed.length) return 'No high-stress days logged recently — nice.';
+    const avgStress = (days.filter(([, d]) => d.stress != null).reduce((s, [, d]) => s + d.stress, 0) / days.filter(([, d]) => d.stress != null).length).toFixed(1);
+    return `Your average stress is ${avgStress}/10. You had ${stressed.length} high-stress day(s), most recently ${fmtLong(stressed[stressed.length - 1][0])}.`;
+  }
+
+  if (q.includes('happ') || q.includes('happiest')) {
+    const withMood = days.filter(([, d]) => d.mood != null);
+    if (!withMood.length) return 'Not enough mood data yet.';
+    const best = withMood.reduce((a, b) => (b[1].mood > a[1].mood ? b : a));
+    return `Your happiest logged day was ${fmtLong(best[0])} with a mood of ${best[1].mood}/10${best[1].journal.wins.filter(w => w.trim()).length ? ', driven by: ' + best[1].journal.wins.filter(w => w.trim()).join(', ') : ''}.`;
+  }
+
+  if (q.includes('habit')) {
+    const list = Store.db.habitList;
+    if (!list.length) return "You haven't set up any habits yet.";
+    const scored = list.map(h => {
+      let withSum = 0, withCount = 0, withoutSum = 0, withoutCount = 0;
+      days.forEach(([, d]) => {
+        if (d.mood == null) return;
+        if (d.habits[h]) { withSum += d.mood; withCount++; } else { withoutSum += d.mood; withoutCount++; }
+      });
+      const withAvg = withCount ? withSum / withCount : null;
+      const withoutAvg = withoutCount ? withoutSum / withoutCount : null;
+      return { h, diff: (withAvg != null && withoutAvg != null) ? withAvg - withoutAvg : null };
+    }).filter(s => s.diff != null).sort((a, b) => b.diff - a.diff);
+    if (!scored.length) return 'Keep logging habits alongside mood and I\'ll find the correlations.';
+    const top = scored[0];
+    return `"${top.h}" correlates with a mood boost of about ${top.diff.toFixed(1)} points on days you do it.`;
+  }
+
+  if (q.includes('focus') || q.includes('this week')) {
+    const behindGoals = Store.db.goals.filter(g => g.progress < 60).sort((a, b) => a.progress - b.progress);
+    if (!behindGoals.length) return 'You\'re making solid progress on every goal — keep the momentum!';
+    return `Consider focusing on "${behindGoals[0].title}" (${behindGoals[0].progress}% complete) and "${(behindGoals[1] || behindGoals[0]).title}" this week.`;
+  }
+
+  if (q.includes('neglect')) {
+    const behind = Store.db.goals.filter(g => g.progress < 50);
+    if (!behind.length) return 'No goals look neglected — everything is above 50%.';
+    return `These goals need attention: ${behind.map(g => `${g.title} (${g.progress}%)`).join(', ')}.`;
+  }
+
+  if (q.includes('summar')) {
+    const monthKey = todayKey().slice(0, 7);
+    const monthDays = days.filter(([k]) => k.startsWith(monthKey));
+    if (!monthDays.length) return 'No entries logged for this month yet.';
+    const avgMood = (monthDays.filter(([, d]) => d.mood != null).reduce((s, [, d]) => s + d.mood, 0) / monthDays.filter(([, d]) => d.mood != null).length || 0).toFixed(1);
+    const exCount = monthDays.filter(([, d]) => d.exerciseDone).length;
+    return `This month you logged ${monthDays.length} day(s), averaged a mood of ${avgMood}/10, and exercised on ${exCount} of them.`;
+  }
+
+  if (q.includes('sleep')) {
+    const withSleep = days.filter(([, d]) => d.sleepHrs != null);
+    const avgSleep = withSleep.length ? (withSleep.reduce((s, [, d]) => s + d.sleepHrs, 0) / withSleep.length).toFixed(1) : null;
+    return avgSleep ? `Your average sleep is ${avgSleep} hrs/night.` : 'No sleep data logged yet.';
+  }
+
+  const mentionMatch = q.match(/mention(?:ing|s)?\s+(\w+)/) || q.match(/about\s+(\w+)/);
+  if (mentionMatch) {
+    const term = mentionMatch[1];
+    const found = days.filter(([, d]) => (d.journal.feel + ' ' + d.journal.challenge + ' ' + d.journal.reflection).toLowerCase().includes(term));
+    if (!found.length) return `No journal entries mention "${term}".`;
+    return `Found ${found.length} entr${found.length > 1 ? 'ies' : 'y'} mentioning "${term}": ${found.slice(0, 5).map(([k]) => fmtLong(k)).join(', ')}.`;
+  }
+
+  const visitMatch = q.match(/visit\w*\s+([a-z\s]+)\??$/);
+  if (visitMatch || q.includes('travel')) {
+    const place = visitMatch ? visitMatch[1].trim() : null;
+    const trips = place ? Store.db.travel.filter(t => t.place.toLowerCase().includes(place)) : Store.db.travel;
+    if (!trips.length) return place ? `No trips found for "${place}".` : 'No trips logged yet.';
+    const last = [...trips].sort((a, b) => b.date.localeCompare(a.date))[0];
+    return `Last visit to ${last.place}: ${fmtLong(last.date)}.`;
+  }
+
+  return generateInsight() + ' (Try asking about stress, happiness, habits, goals, sleep, or a place you visited.)';
+}
+
+
+// ---- js/views/documents.js ----
+const DOC_ICONS = { pdf: '📕', image: '🖼️', doc: '📄', other: '📁' };
+
+function renderDocuments() {
+  const html = `
+  <div class="topbar">
+    <div><h1>📄 Documents</h1><div class="sub">Your digital vault — certificates, IDs, and important files, stored locally in this browser.</div></div>
+    <label class="btn">+ Upload<input type="file" style="display:none" onchange="handleDocUpload(event)"/></label>
+  </div>
+  <div class="card">
+    <div class="card-head"><h3>Stored Documents</h3><span class="meta">${Store.db.documents.length} files</span></div>
+    <div id="docsList"></div>
+  </div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+  renderDocsList();
+}
+
+function renderDocsList() {
+  const el = document.getElementById('docsList');
+  if (!Store.db.documents.length) { el.innerHTML = '<div class="empty-state">No documents uploaded yet.</div>'; return; }
+  el.innerHTML = Store.db.documents.map(d => `
+    <div class="list-item">
+      <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:16px">${DOC_ICONS[d.kind] || '📁'}</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px">${escapeHtml(d.name)}</div>
+        <div style="font-size:11px;color:var(--text-dim)">Added ${fmtLong(d.addedDate)}</div>
+      </div>
+      <a class="btn-sm btn secondary" href="${d.dataUrl}" download="${escapeHtml(d.name)}">Download</a>
+      <button class="icon-btn danger" onclick="deleteDoc('${d.id}')">✕</button>
+    </div>`).join('');
+}
+
+function handleDocUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    let kind = 'other';
+    if (file.type === 'application/pdf') kind = 'pdf';
+    else if (file.type.startsWith('image/')) kind = 'image';
+    else if (file.type.includes('word') || file.type.includes('document')) kind = 'doc';
+    Store.db.documents.push({ id: Store.uid('doc'), name: file.name, kind, dataUrl: e.target.result, addedDate: todayKey() });
+    Store.save();
+    renderDocsList();
+  };
+  reader.readAsDataURL(file);
+}
+
+function deleteDoc(id) {
+  Store.db.documents = Store.db.documents.filter(d => d.id !== id);
+  Store.save();
+  renderDocsList();
+}
+
+
+// ---- js/views/search.js ----
+function renderSearch(params) {
+  const q = (params && params.q) || '';
+  const html = `
+  <div class="topbar">
+    <div><h1>🔍 Search Everything</h1><div class="sub">Journal, goals, expenses, books, travel, documents — all in one place.</div></div>
+  </div>
+  <div class="search-box">
+    <span class="icon">🔍</span>
+    <input id="searchInput" placeholder='Try "budget", "happy", "Mongar"...' value="${escapeHtml(q)}" oninput="runSearch(this.value)"/>
+  </div>
+  <div id="searchResults"></div>
+  `;
+  document.getElementById('mainContent').innerHTML = html;
+  if (q) runSearch(q);
+  else document.getElementById('searchResults').innerHTML = '<div class="empty-state">Start typing to search across everything you\'ve logged.</div>';
+  document.getElementById('searchInput').focus();
+}
+
+function runSearch(qRaw) {
+  const q = qRaw.trim().toLowerCase();
+  const el = document.getElementById('searchResults');
+  if (!q) { el.innerHTML = '<div class="empty-state">Start typing to search across everything you\'ve logged.</div>'; return; }
+
+  const results = [];
+  Object.entries(Store.db.days).forEach(([k, d]) => {
+    const blob = [d.journal.feel, d.journal.challenge, d.journal.reflection, ...d.journal.gratitude, ...d.journal.wins, d.photo.location].join(' ').toLowerCase();
+    if (blob.includes(q)) results.push({ type: 'Journal', title: fmtLong(k), sub: (d.journal.feel || '').slice(0, 100), action: () => navigate('journal', { date: k }) , view:'journal', date:k});
+  });
+  Store.db.goals.forEach(g => { if (g.title.toLowerCase().includes(q) || g.category.toLowerCase().includes(q)) results.push({ type: 'Goal', title: g.title, sub: `${g.category} · ${g.progress}%`, view: 'goals' }); });
+  Store.db.finance.transactions.forEach(t => { if ((t.category + ' ' + t.note).toLowerCase().includes(q)) results.push({ type: 'Finance', title: `${t.category} — Nu. ${t.amount.toLocaleString()}`, sub: fmtLong(t.date), view: 'finance' }); });
+  Store.db.books.forEach(b => { if ((b.title + ' ' + b.author).toLowerCase().includes(q)) results.push({ type: 'Book', title: b.title, sub: b.author, view: 'books' }); });
+  Store.db.travel.forEach(t => { if ((t.place + ' ' + t.notes).toLowerCase().includes(q)) results.push({ type: 'Travel', title: t.place, sub: fmtLong(t.date), view: 'travel' }); });
+  Store.db.documents.forEach(d => { if (d.name.toLowerCase().includes(q)) results.push({ type: 'Document', title: d.name, sub: fmtLong(d.addedDate), view: 'documents' }); });
+  Store.db.habitList.forEach(h => { if (h.toLowerCase().includes(q)) results.push({ type: 'Habit', title: h, sub: `🔥 ${Store.habitStreak(h)} day streak`, view: 'habits' }); });
+
+  if (!results.length) { el.innerHTML = `<div class="empty-state">No results for "${escapeHtml(qRaw)}".</div>`; return; }
+
+  const typeColors = { Journal: '#6366f1', Goal: '#22c55e', Finance: '#f59e0b', Book: '#8b5cf6', Travel: '#3b82f6', Document: '#64748b', Habit: '#ef4444' };
+  el.innerHTML = `<div class="card">${results.map(r => `
+    <div class="list-item" style="cursor:pointer" onclick="navigate('${r.view}'${r.date ? `,{date:'${r.date}'}` : ''})">
+      <span class="pill" style="background:${typeColors[r.type]}22;color:${typeColors[r.type]}">${r.type}</span>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px">${escapeHtml(r.title)}</div>
+        <div style="font-size:11.5px;color:var(--text-dim)">${escapeHtml(r.sub || '')}</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+
+// ---- js/app.js ----
+let currentView = 'dashboard';
+
+const VIEW_RENDERERS = {
+  dashboard: renderDashboard,
+  tasks: renderTasks,
+  journal: renderJournal,
+  timeline: renderTimeline,
+  goals: renderGoals,
+  habits: renderHabits,
+  health: renderHealth,
+  finance: renderFinance,
+  photos: renderPhotos,
+  books: renderBooks,
+  travel: renderTravel,
+  aicoach: renderAiCoach,
+  documents: renderDocuments,
+  search: renderSearch
+};
+
+function navigate(view, params) {
+  currentView = view;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.view === view));
+  const renderer = VIEW_RENDERERS[view];
+  if (renderer) renderer(params);
+  window.scrollTo(0, 0);
+  closeSidebar();
+}
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarBackdrop').classList.add('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('show');
+}
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.contains('open') ? closeSidebar() : openSidebar();
+}
+
+function initProfile() {
+  const db = Store.db;
+  document.getElementById('profileName').textContent = db.profile.name;
+  document.getElementById('profileTag').textContent = db.profile.tagline;
+  document.getElementById('avatarInitials').textContent = db.profile.name.split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+}
+
+// This tells the browser to use the service-worker.js file we added,
+// which is what makes the app installable and able to work offline.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(err => {
+      console.log('Service worker registration failed:', err);
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  showLockScreen();
+
+  document.getElementById('navList').addEventListener('click', e => {
+    const item = e.target.closest('.nav-item');
+    if (item) navigate(item.dataset.view);
+  });
+  document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
+  document.getElementById('sidebarBackdrop').addEventListener('click', closeSidebar);
+
+  setInterval(() => {
+    if (currentView === 'dashboard') {
+      const timeEls = document.querySelectorAll('.datetime .time');
+      if (timeEls.length) timeEls[timeEls.length - 1].textContent = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+  }, 30000);
+});
+
+</script>
+</body>
+</html>
